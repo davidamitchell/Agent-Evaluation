@@ -1,0 +1,61 @@
+# Not Doing
+
+This file records design suggestions that have been explicitly considered and deliberately set aside. For each item, the reason is documented so that future contributors understand the boundary and do not re-propose the same approach without new context.
+
+This is a living document. Items may be promoted to the backlog if circumstances change.
+
+---
+
+## Environment-variable-only script configuration
+
+**Suggested:** Configure evaluation scripts via environment variables (e.g. `DATASET`, `AGENT`, `OUTPUT_DIR`) instead of command-line arguments.
+
+**Decision:** Not adopting. All scripts in this repository use `argparse` for their configuration interface. This makes scripts independently runnable (`python scripts/foo.py --help` works), testable without environment setup, and consistent with the reference implementation (`run_evaluation.py`). Environment variables are reserved for secrets (`GITHUB_TOKEN`) only.
+
+---
+
+## Timestamp-based result file naming
+
+**Suggested:** Name result files by ISO 8601 timestamp (e.g. `run_20260306T202000.json`) rather than sequential integers.
+
+**Decision:** Not adopting. Sequential zero-padded naming (`run_001.json`, `run_002.json`) is the established convention in this repository. It produces predictable sort order, simple human readability, and matching between `results/run_NNN.json` and `experiments/run_NNN.json`. Switching to timestamps would break the pairing convention and make chronological ordering dependent on filename parsing.
+
+---
+
+## External experiment tracking (MLflow, Weights & Biases, etc.)
+
+**Suggested:** Use an established ML experiment tracking tool to store results, metrics, and artefacts.
+
+**Decision:** Out of scope. This system is intentionally GitHub-native. All artefacts (results, experiment logs, summaries) are stored as version-controlled JSON files committed back to the repository. This preserves full traceability without external service dependencies, matches the CI/CD workflow, and keeps the system reproducible from a fresh clone. An external tracker would require credentials, network access, and account setup that are not available in every GitHub Actions environment.
+
+---
+
+## Replacing `run_evaluation.py` with a new standalone script
+
+**Suggested:** Replace the existing evaluator with a new script rather than enhancing the existing one.
+
+**Decision:** Not adopting. The existing `run_evaluation.py` is the established entry point referenced by the workflow, documentation, and backlog. Enhancements (LLM-as-judge scoring, variant support, retry logic, experiment logging) are integrated into the existing script to avoid breaking downstream references and to preserve commit history continuity.
+
+---
+
+## Full adversarial synthetic dataset generation (immediate)
+
+**Suggested:** Implement an adversarial generator agent immediately as part of the baseline pipeline.
+
+**Decision:** Deferred to Task 012. Adversarial generation is architecturally sound but requires a stable evaluation pipeline and a reviewed probe dataset schema (Task 011) before synthetic scenarios can be meaningfully staged and validated. Implementing it before the baseline is stable risks generating scenarios that cannot be reliably scored.
+
+---
+
+## Items reviewed but already in scope
+
+The following suggestions from the same review are **being implemented** (not in this file because they are in scope):
+
+- LLM-as-judge scoring → implemented in `scripts/run_evaluation.py`
+- Paraphrase variants per dataset item → `datasets/example.json` and `datasets/README.md`
+- Retry-safe model calls with exponential backoff → `scripts/run_evaluation.py`
+- Deterministic evaluation (`temperature=0`) → `scripts/run_evaluation.py`
+- Experiment metadata logging → `scripts/run_evaluation.py` writes `experiments/run_NNN.json`
+- Benchmark overfitting risk documentation → `lab/adr/ADR-0002-evaluation-scoring.md` and `lab/backlog.md`
+- Adversarial probe dataset → `lab/backlog.md` Task 011
+- Synthetic adversarial generation → `lab/backlog.md` Task 012
+- Train/test/probe dataset separation → `lab/backlog.md` Tasks 005 and 011
