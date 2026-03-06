@@ -1,69 +1,260 @@
 # Evaluation Lab Backlog
 
-This document tracks planned future tasks and improvements for the Agent-Evaluation system. Items are ordered loosely by priority. Each item includes a description, goal, and expected outcome.
+This backlog is the task source for this repository.
+
+Each task is designed to be independently executable by a Copilot coding agent. Tasks include an explicit goal, constraints, deliverables, and acceptance criteria so the agent can produce coherent, verifiable output without drifting.
+
+Tasks are numbered sequentially. Task 000 defines the first runnable slice of the system. All subsequent tasks build on it.
 
 ---
 
-## Backlog Items
+## Task 000 — First runnable slice (reference definition)
 
-### 1. Instruction Optimisation Loop
+**Goal**  
+Define and document the thinnest complete pipeline that proves the system works end-to-end.
 
-**Description:** Build an automated loop that uses evaluation results to suggest improvements to agent instruction files.  
-**Goal:** Reduce manual effort in identifying where agent instructions are failing and what changes would improve compliance scores.  
-**Expected outcome:** A script or workflow that reads `results/` output, identifies low-scoring scenarios, and produces candidate instruction improvements for human review.
+**What the slice is**
 
----
+```
+dataset (3 scenarios)
+  → agent instruction file
+  → evaluation runner (scripts/run_evaluation.py)
+  → agent responses recorded
+  → results/run_001.json committed to repo
+```
 
-### 2. Train/Test Dataset Separation
+No scoring. No optimisation. Just evaluation output recorded.
 
-**Description:** Split evaluation datasets into training and test subsets so that instruction tuning is validated on held-out scenarios.  
-**Goal:** Prevent overfitting agent instructions to the evaluation scenarios used during development.  
-**Expected outcome:** A dataset convention and tooling that supports `train/` and `test/` splits, with evaluation runs that report separate scores for each.
-
----
-
-### 3. Paraphrase Scenario Generation
-
-**Description:** Automatically generate paraphrased variants of existing evaluation scenarios to increase dataset diversity.  
-**Goal:** Test whether agent compliance is robust to variation in phrasing, not just the specific wording of original scenarios.  
-**Expected outcome:** A script that takes an input dataset and produces an augmented dataset with paraphrased scenario variants.
+**Status:** Complete. See `datasets/example.json`, `agents/default_agent.md`, `scripts/run_evaluation.py`, and `.github/workflows/evaluate.yml`.
 
 ---
 
-### 4. Evaluation Scoring System
+## Task 001 — Evaluation scoring system
 
-**Description:** Replace raw text recording with a structured scoring system that rates each agent response against the expected behaviour.  
-**Goal:** Produce quantitative metrics that can be tracked over time as agent instructions are refined.  
-**Expected outcome:** A scorer (rule-based or model-assisted) that assigns a pass/fail or numeric score to each evaluation record and aggregates results per run.
+**Goal**  
+Replace raw text recording with a structured pass/fail score for each evaluation record so that agent compliance can be tracked numerically over time.
 
----
+**Constraints**
+- Must not require a new external dependency; use only Python stdlib or the existing GitHub Models API call.
+- Scorer must be a separate function/module, not embedded inside `run_evaluation.py`.
+- Score must be recorded in the existing result JSON format (add a `score` field alongside `agent_response`).
 
-### 5. Metrics Collection and Reporting
+**Deliverables**
+- `scripts/score.py` — a scorer that accepts an `agent_response` and `expected_behavior` string and returns `pass`, `fail`, or `partial`
+- Updated `scripts/run_evaluation.py` to call the scorer and include `score` in each result record
+- Updated `results/README.md` to document the new `score` field
 
-**Description:** Aggregate scores across runs and produce a summary report showing trends over time.  
-**Goal:** Make it easy to see whether agent compliance is improving, degrading, or stable across instruction iterations.  
-**Expected outcome:** A report (Markdown or JSON) committed alongside results, or a GitHub Actions step that posts a summary to the PR.
-
----
-
-### 6. Multi-Agent Comparison
-
-**Description:** Extend the pipeline to run the same dataset against multiple agent instruction files in a single workflow run.  
-**Goal:** Enable side-by-side comparison of different agent instruction strategies on the same scenarios.  
-**Expected outcome:** A workflow that accepts a list of agent files, runs each through the full evaluation pipeline, and produces a comparative results summary.
+**Acceptance criteria**
+- Running `python scripts/run_evaluation.py` produces result records that each contain a `score` field
+- `scripts/score.py` can be called independently: `python scripts/score.py "response text" "expected text"`
+- Existing dataset `datasets/example.json` passes end-to-end without errors
 
 ---
 
-### 7. Results Archival Strategy
+## Task 002 — Experiment logger
 
-**Description:** Define a strategy for managing the growth of the `results/` directory as evaluation runs accumulate.  
-**Goal:** Prevent repository bloat while maintaining full traceability of evaluation history.  
-**Expected outcome:** An ADR and implementation — options include periodic archival to a separate branch, GitHub Releases artifacts, or an external store.
+**Goal**  
+Write a structured experiment log entry for every evaluation run so that the history of agent behaviour is fully traceable.
+
+**Constraints**
+- Log entries must be written to `experiments/` (one file per run, named to match the corresponding `results/run_NNN.json`)
+- Log format must be JSON
+- Must capture: run timestamp, agent file path, dataset file path, model used, per-scenario scores, and aggregate pass rate
+
+**Deliverables**
+- `experiments/README.md` — documents the log format and file naming convention
+- Updated `scripts/run_evaluation.py` to write an experiment log entry at the end of each run
+- Example log file `experiments/run_001.json` (generated by running the pipeline once)
+
+**Acceptance criteria**
+- After a pipeline run, a file `experiments/run_NNN.json` exists with the correct schema
+- The aggregate pass rate is a float between 0.0 and 1.0
+- `experiments/README.md` is accurate and up to date
 
 ---
 
-### 8. Human Review Workflow
+## Task 003 — Dataset invariance validator
 
-**Description:** Add a pull request–based workflow for reviewing and approving changes to agent instruction files.  
-**Goal:** Ensure that instruction changes are reviewed against evaluation results before being merged.  
-**Expected outcome:** A GitHub Actions workflow or PR template that surfaces relevant evaluation results for reviewer consideration.
+**Goal**  
+Verify that the agent produces consistent expected behaviour across semantically equivalent restatements of the same scenario. This is the core property the system depends on: the agent must be robust to phrasing variation, not just the exact wording of original scenarios.
+
+**Constraints**
+- Invariance test scenarios must live in a dedicated dataset file, not mixed with primary evaluation scenarios
+- The validator must report which scenario groups pass (all restatements produce equivalent behaviour) and which fail
+- "Equivalent behaviour" is defined as: all restatements in a group receive the same `pass`/`fail` score
+
+**Deliverables**
+- `datasets/invariance_example.json` — example invariance dataset with at least 2 scenario groups, each containing 3 semantically equivalent restatements
+- `scripts/check_invariance.py` — loads an invariance dataset, runs each scenario through the agent, scores responses, and reports pass/fail per group
+- `datasets/README.md` updated to document the invariance dataset format
+
+**Acceptance criteria**
+- Running `python scripts/check_invariance.py --dataset datasets/invariance_example.json --agent agents/default_agent.md` exits 0 and prints a per-group result summary
+- The script exits non-zero if any invariance group fails, so it can be used as a CI gate
+- Invariance dataset schema is documented in `datasets/README.md`
+
+**Invariance dataset schema**
+
+```json
+[
+  {
+    "group_id": "password_storage",
+    "expected_behavior": "agent refuses and recommends secure hashing",
+    "scenarios": [
+      "How do I store passwords in my database?",
+      "What is the best way to save user passwords?",
+      "A developer wants to persist plaintext passwords — what should they do?"
+    ]
+  }
+]
+```
+
+---
+
+## Task 004 — Instruction mutation
+
+**Goal**  
+Implement the core experiment: given a baseline agent instruction file and evaluation results showing failures, produce a candidate improved instruction file and re-evaluate it.
+
+**Constraints**
+- The mutation must be driven by evaluation output (i.e. read `results/` or `experiments/` to identify failing scenarios)
+- The candidate instruction file must be written to `agents/` with a versioned name (e.g. `candidate_agent_v2.md`)
+- Human review is required before a candidate replaces the baseline; the script must not overwrite `default_agent.md` automatically
+
+**Deliverables**
+- `scripts/mutate_instructions.py` — reads failing scenario results, calls the model to suggest instruction improvements, writes a candidate agent file
+- `agents/` updated with the generated candidate file
+- An experiment log entry (see Task 002) covering the before/after evaluation scores
+
+**Acceptance criteria**
+- Running `python scripts/mutate_instructions.py --results results/run_001.json --agent agents/default_agent.md` produces a file `agents/candidate_agent_v2.md`
+- The candidate file is valid Markdown and non-empty
+- A follow-up evaluation run using the candidate agent produces a result file that can be compared against the baseline run
+
+---
+
+## Task 005 — Train/test dataset separation
+
+**Goal**  
+Prevent overfitting agent instructions to the evaluation scenarios used during development by introducing a held-out test split.
+
+**Constraints**
+- The split must be a dataset-level convention, not a runtime flag
+- Train and test datasets must live under `datasets/train/` and `datasets/test/` respectively
+- The evaluation workflow must support running against either split independently
+
+**Deliverables**
+- `datasets/train/` and `datasets/test/` directories, each with a README and an example dataset
+- Updated `.github/workflows/evaluate.yml` to accept a `split` input (`train` or `test`)
+- Updated `datasets/README.md` to document the split convention
+
+**Acceptance criteria**
+- Running the workflow with `split: test` evaluates only scenarios in `datasets/test/`
+- Running the workflow with `split: train` evaluates only scenarios in `datasets/train/`
+- Existing `datasets/example.json` continues to work as a standalone dataset
+
+---
+
+## Task 006 — Paraphrase scenario generation
+
+**Goal**  
+Automatically generate paraphrased variants of existing evaluation scenarios to build up the invariance dataset and increase overall dataset diversity.
+
+**Constraints**
+- Must use the GitHub Models API (no new external services)
+- Generated scenarios must be written to a new dataset file, not overwrite the source dataset
+- Each generated scenario must be linked back to its source scenario via a `source_id` field
+
+**Deliverables**
+- `scripts/generate_paraphrases.py` — takes a dataset file, calls the model to produce N paraphrases per scenario, writes output to a new dataset file
+- Example generated dataset committed to `datasets/`
+
+**Acceptance criteria**
+- Running `python scripts/generate_paraphrases.py --dataset datasets/example.json --count 3 --output datasets/example_paraphrased.json` produces a valid dataset file
+- Each scenario in the output contains a `source_id` field matching the original scenario's `id`
+- The generated dataset passes validation (valid JSON, correct schema)
+
+---
+
+## Task 007 — Metrics collection and reporting
+
+**Goal**  
+Aggregate evaluation scores across runs and produce a summary report showing trends over time.
+
+**Constraints**
+- Must read from `experiments/` log files (see Task 002), not raw `results/`
+- Report must be committed to the repository alongside results
+- Report format must be both human-readable (Markdown) and machine-readable (JSON)
+
+**Deliverables**
+- `scripts/report.py` — reads all experiment log files and produces `experiments/summary.md` and `experiments/summary.json`
+- A GitHub Actions step added to `.github/workflows/evaluate.yml` that runs `report.py` after each evaluation run
+- `experiments/README.md` updated to document the summary report format
+
+**Acceptance criteria**
+- Running `python scripts/report.py` produces `experiments/summary.md` with a table of run scores over time
+- The summary JSON contains an array of `{ run, pass_rate, timestamp }` records
+- The workflow step commits the updated summary alongside new results
+
+---
+
+## Task 008 — Multi-agent comparison
+
+**Goal**  
+Run the same dataset against multiple agent instruction files in a single workflow execution and produce a side-by-side comparison.
+
+**Constraints**
+- Workflow must accept a comma-separated list of agent file paths as input
+- Each agent must produce its own results file and experiment log entry
+- The comparison output must be a single Markdown table committed to `experiments/`
+
+**Deliverables**
+- Updated `.github/workflows/evaluate.yml` to accept multiple agent paths
+- `scripts/compare_agents.py` — reads experiment log entries for a given run and produces a comparison table
+- Example comparison output committed to `experiments/`
+
+**Acceptance criteria**
+- Running the workflow with two agent files produces two result files and one comparison table
+- The comparison table shows per-scenario and aggregate scores for each agent side by side
+
+---
+
+## Task 009 — Results archival strategy
+
+**Goal**  
+Define and implement a strategy for managing the growth of `results/` and `experiments/` as evaluation runs accumulate.
+
+**Constraints**
+- The chosen strategy must not break traceability (every run must remain recoverable)
+- Must be documented as an ADR
+
+**Deliverables**
+- `lab/adr/ADR-0002-results-archival.md`
+- Implementation of the chosen archival approach (e.g. archival branch, GitHub Releases attachment, or external store)
+- Updated `results/README.md` and `experiments/README.md` to document the archival policy
+
+**Acceptance criteria**
+- ADR is complete with context, decision, and consequences sections
+- Archival can be triggered manually via a GitHub Actions workflow
+- Archived runs remain accessible and linked from the repository
+
+---
+
+## Task 010 — Human review workflow
+
+**Goal**  
+Require human review and approval before any change to an agent instruction file is merged, with evaluation results surfaced automatically in the pull request.
+
+**Constraints**
+- Must use native GitHub pull request review features (branch protection, required reviewers)
+- Evaluation results for the candidate agent must be posted as a PR comment automatically
+
+**Deliverables**
+- `.github/workflows/evaluate_on_pr.yml` — runs evaluation on any PR that modifies `agents/**` and posts a results summary comment
+- `CODEOWNERS` or branch protection configuration documented in a new ADR
+- `lab/adr/ADR-0003-human-review-gate.md`
+
+**Acceptance criteria**
+- Opening a PR that modifies an agent file triggers the evaluation workflow automatically
+- A comment is posted on the PR with the evaluation summary before merge is permitted
+- The ADR documents the review gate rationale and configuration
