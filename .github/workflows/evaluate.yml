@@ -23,7 +23,6 @@ on:
 
 permissions:
   contents: write
-  models: read
 
 jobs:
   evaluate:
@@ -40,7 +39,7 @@ jobs:
 
       - name: Run evaluation pipeline
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           python scripts/run_evaluation.py \
             --dataset "${{ github.event.inputs.dataset || 'datasets/example.json' }}" \

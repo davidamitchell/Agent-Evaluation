@@ -7,7 +7,7 @@ Evaluation pipeline for the Agent-Evaluation system.
 Responsibilities:
   - Load a dataset of evaluation scenarios from datasets/
   - Load agent instructions from agents/
-  - Submit each scenario (and any optional variants) to the GitHub Models API
+  - Submit each scenario (and any optional variants) to the GitHub Copilot API
     using temperature=0 for deterministic, reproducible responses
   - Score each response using an LLM-as-judge for compliance measurement
   - Store raw per-variant results in results/run_NNN.json
@@ -22,8 +22,8 @@ Usage:
       --experiments-dir experiments
 
 Environment variables:
-  GITHUB_TOKEN   A GitHub personal access token with models:read permission,
-                 used to authenticate against the GitHub Models API endpoint.
+  COPILOT_GITHUB_TOKEN   A GitHub token with Copilot access, used to
+                         authenticate against the GitHub Copilot API endpoint.
 """
 
 import argparse
@@ -36,7 +36,7 @@ import urllib.request
 import urllib.error
 
 
-GITHUB_MODELS_ENDPOINT = "https://models.inference.ai.azure.com"
+GITHUB_COPILOT_ENDPOINT = "https://api.githubcopilot.com"
 DEFAULT_MODEL = "gpt-4o-mini"
 MAX_RETRIES = 3
 
@@ -61,7 +61,7 @@ def call_model(
     model: str,
     temperature: float = 0,
 ) -> str:
-    """Send a chat completion request to the GitHub Models API with retry logic.
+    """Send a chat completion request to the GitHub Copilot API with retry logic.
 
     Uses temperature=0 by default for deterministic, reproducible outputs.
     Retries up to MAX_RETRIES times with exponential backoff on transient errors.
@@ -79,7 +79,7 @@ def call_model(
     ).encode("utf-8")
 
     req = urllib.request.Request(
-        f"{GITHUB_MODELS_ENDPOINT}/chat/completions",
+        f"{GITHUB_COPILOT_ENDPOINT}/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
@@ -170,9 +170,9 @@ def evaluate(
     experiments_dir: str,
     model: str,
 ) -> str:
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("COPILOT_GITHUB_TOKEN")
     if not token:
-        sys.exit("Error: GITHUB_TOKEN environment variable is not set.")
+        sys.exit("Error: COPILOT_GITHUB_TOKEN environment variable is not set.")
 
     scenarios = load_dataset(dataset_path)
     agent_instructions = load_agent_instructions(agent_path)
