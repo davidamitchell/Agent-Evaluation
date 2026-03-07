@@ -46,6 +46,45 @@ Failing to update these files will cause future agents to work from incorrect co
 
 ---
 
+## Continuous self-improvement — the lab improves itself
+
+This repository is not just a static evaluation harness. It is designed to improve itself incrementally through each evaluation cycle. Every agent run produces data; that data drives the next mutation; that mutation is evaluated; the cycle repeats. This principle of **continuous self-improvement** is intentional and must be preserved by every contributor.
+
+### The feedback loop
+
+```
+evaluate agent
+  → score responses (results/run_NNN.json)
+  → log experiment (experiments/run_NNN.json)
+  → generate retro memo (experiments/retros/retro_NNN.md)
+  → identify failures → mutate instructions (agents/candidate_agent_vN.md)
+  → check drift (scripts/check_drift.py)
+  → evaluate candidate → detect regressions (scripts/compare_agents.py)
+  → human review → promote or discard
+  → repeat
+```
+
+### What every agent must do to preserve this loop
+
+1. **Never break the traceability chain.** Every run must produce a `results/run_NNN.json`, an `experiments/run_NNN.json`, and a `experiments/retros/retro_NNN.md`. None of these may be skipped or overwritten.
+2. **Always check for drift.** Any PR that modifies an agent instruction file must run `scripts/check_drift.py` to confirm the candidate has not grown beyond the 20% threshold.
+3. **Always check for regressions.** Any PR that proposes a new candidate agent must run `scripts/compare_agents.py` against the most recent baseline experiment log. A regression on a previously passing scenario is a blocker.
+4. **Flag stale datasets.** After enough runs accumulate, check `experiments/summary.json` for the `stale` flag. A stale dataset needs human review and a refresh cycle before the next optimization round.
+5. **Propose backlog improvements.** If you discover a gap in the pipeline — a failure mode not detected, a metric not collected, a risk not mitigated — add a new task to `lab/backlog.md`. The backlog is the primary mechanism for the lab to improve itself.
+
+### Proposing new backlog tasks
+
+Any contributor (human or agent) may add new tasks to `lab/backlog.md` if they identify a gap in the self-improvement loop. A well-formed backlog task must have:
+
+- A clear **Goal** describing what the task achieves for the quality of the feedback loop
+- **Constraints** explaining what must not change or be broken
+- **Deliverables** listing exact files to create or modify
+- **Acceptance criteria** that are objectively verifiable without human judgment
+
+Do not add tasks that simply add features without a clear connection to improving evaluation quality, mutation quality, or feedback loop reliability.
+
+---
+
 ## Repository layout
 
 ```
@@ -67,15 +106,19 @@ scripts/
   mutate_instructions.py    # Instruction mutator (added in Task 004)
   generate_paraphrases.py   # Paraphrase generator (added in Task 006)
   report.py                 # Metrics reporter (added in Task 007)
-  compare_agents.py         # Multi-agent comparison (added in Task 008)
+  compare_agents.py         # Multi-agent comparison + regression gate (Tasks 008, 014)
+  check_drift.py            # Instruction drift detector (added in Task 013)
+  generate_retro.py         # Self-improvement retro generator (added in Task 016)
 
 results/
   run_001.json              # Raw agent responses per evaluation run
 
 experiments/
   run_001.json              # Structured experiment logs (metadata + scores + pass rate)
-  summary.json              # Aggregate pass rates over time (added in Task 007)
+  summary.json              # Aggregate pass rates + dataset staleness (Tasks 007, 015)
   summary.md                # Human-readable version of summary.json
+  retros/
+    retro_NNN.md            # Per-run retrospective memo (added in Task 016)
 
 tests/
   __init__.py               # Package marker
@@ -88,6 +131,11 @@ pytest.ini                  # pytest marker definitions
 lab/
   backlog.md                # Task list — the source of truth for planned work
   adr/                      # Architecture Decision Records
+    ADR-0001-repository-purpose.md
+    ADR-0002-evaluation-scoring.md
+    ADR-0003-self-improvement-loop.md   # Self-improvement loop architecture
+    ADR-0004-instruction-drift.md       # Drift threshold policy (created in Task 013)
+    ADR-0005-dataset-freshness.md       # Dataset staleness policy (created in Task 015)
 
 .github/
   workflows/
@@ -199,6 +247,7 @@ JSON object:
 |-------|-----------|
 | Result files | `results/run_NNN.json` (zero-padded 3-digit run number, e.g. `run_001`) |
 | Experiment logs | `experiments/run_NNN.json` (same number as the corresponding result file) |
+| Retro memos | `experiments/retros/retro_NNN.md` (same number as the corresponding run) |
 | Candidate agent files | `agents/candidate_agent_v<N>.md` (e.g. `candidate_agent_v2.md`) |
 | Invariance datasets | `datasets/invariance_<name>.json` |
 | Paraphrase datasets | `datasets/<source_name>_paraphrased.json` |
@@ -344,8 +393,9 @@ These rules apply to every PR in this repository regardless of which task is bei
 1. **Never overwrite `agents/default_agent.md` automatically.** All instruction mutations must produce a new versioned candidate file. Human review is required before any candidate replaces the baseline.
 2. **Never commit secrets.** `COPILOT_GITHUB_TOKEN` is injected via Actions secrets; it must never appear in source files or result files.
 3. **Never modify a result or experiment file after it has been committed.** These are immutable records. If a run must be re-run, produce a new numbered file.
-4. **Do not mix agent definitions and evaluation infrastructure.** Changes to `agents/` should not require changes to `scripts/` and vice versa (except when a task explicitly bridges both).
-5. **Every new script must be reachable from a workflow.** If a script is added as a Deliverable, the corresponding task's Acceptance criteria will include a workflow step or manual invocation path.
+4. **Never overwrite a retro memo after it has been committed.** `experiments/retros/retro_NNN.md` files are immutable records of the feedback loop state at each cycle.
+5. **Do not mix agent definitions and evaluation infrastructure.** Changes to `agents/` should not require changes to `scripts/` and vice versa (except when a task explicitly bridges both).
+6. **Every new script must be reachable from a workflow.** If a script is added as a Deliverable, the corresponding task's Acceptance criteria will include a workflow step or manual invocation path.
 
 ---
 

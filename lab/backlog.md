@@ -298,3 +298,140 @@ Use an adversarial generator agent to automatically produce novel evaluation sce
 - Each generated scenario contains `id`, `scenario`, and `expected_behavior` fields
 - The script exits non-zero if the model returns invalid JSON
 
+---
+
+## Task 013 — Instruction drift detection
+
+**Goal**  
+Track the length and structural complexity of agent instruction files across candidate versions and flag when a candidate has grown beyond an acceptable threshold relative to the baseline. This prevents instruction drift: a known failure mode where iterative rule additions lengthen prompts, causing recall degradation through context rot.
+
+**Background**  
+Research on automated prompt optimization (DSPy MIPRO, APE, OPRO) identifies instruction length growth as a primary reliability risk in any self-improvement loop. The "lost in the middle" effect and context rot (Chroma Research, 2025) demonstrate that recall accuracy degrades non-uniformly as prompts grow longer. The mitigation is a length-aware check on every candidate before promotion.
+
+**Constraints**
+- Must use only Python stdlib; no new pip dependencies
+- Measure length in lines and word count (not tokens — no tokenizer dependency)
+- The growth threshold is 20% above the baseline by default, configurable via `--threshold`
+- Must integrate as a step in the PR evaluation workflow (Task 010)
+
+**Deliverables**
+- `scripts/check_drift.py` — reads two agent files (baseline and candidate), reports line count, word count, and percentage change; exits non-zero if growth exceeds threshold
+- A step added to `.github/workflows/evaluate_on_pr.yml` to run `check_drift.py` and include the result in the PR comment
+- `lab/adr/ADR-0004-instruction-drift.md` documenting the drift policy, threshold rationale, and mitigation approach
+- Unit tests in `tests/test_unit.py` covering: baseline equals candidate (no drift), candidate within threshold, candidate exceeds threshold
+
+**Acceptance criteria**
+- `python scripts/check_drift.py --baseline agents/default_agent.md --candidate agents/candidate_agent_v2.md` prints a structured drift report and exits non-zero if growth > 20%
+- `python scripts/check_drift.py --help` prints usage
+- PR comment (from Task 010) includes drift metrics (line delta, word delta, growth %) alongside evaluation scores
+- All new unit tests pass
+
+---
+
+## Task 014 — Score regression gate
+
+**Goal**  
+In PR evaluation, explicitly detect and flag any scenario that previously scored `pass` in the baseline agent but scores `partial` or `fail` in the candidate. A net improvement in pass rate is not sufficient to approve a candidate if it regresses on previously passing cases.
+
+**Background**  
+The research on automated instruction optimization (APE, OPRO, DSPy) identifies Goodhart's Law as the central risk: optimising a metric causes the metric to cease being a good proxy. Specifically, a candidate that gains passes on new scenarios while losing passes on old ones may have overfit to the failing scenarios used to drive mutation. A per-scenario regression check is the direct mitigation.
+
+**Constraints**
+- Must compare against the most recent baseline experiment log in `experiments/`
+- A regression is: a scenario that scored `pass` in the baseline now scores `partial` or `fail` in the candidate
+- Must produce a per-scenario table (pass, regressed, improved, unchanged) — not just aggregate pass rate
+- Script must exit non-zero when any regressions are detected, enabling use as a CI gate
+
+**Deliverables**
+- Updated `scripts/compare_agents.py` to detect per-scenario regressions and produce a regression table
+- Regression summary added to the PR comment format from Task 010
+- Unit tests in `tests/test_unit.py` covering: no regressions, regression detected, scenario in candidate but not baseline (new scenario), scenario in baseline but not candidate (removed scenario)
+
+**Acceptance criteria**
+- `python scripts/compare_agents.py --baseline experiments/run_001.json --candidate experiments/run_002.json` outputs a Markdown table with per-scenario status (pass/regressed/improved/unchanged) and exits non-zero if any regressions exist
+- PR comment includes the regression table
+- All new unit tests pass
+
+---
+
+## Task 015 — Dataset freshness detection
+
+**Goal**  
+Detect when an evaluation dataset has become "stale" — consistently achieving near-perfect pass rates across recent runs — and surface a freshness flag in the summary report so that human reviewers know when to trigger a dataset refresh cycle.
+
+**Background**  
+The research on self-improving evaluation loops identifies the unresolved architectural gap: the outer-loop variation set (datasets) can itself overfit to known agent behaviour over time. A dataset where the agent always achieves pass_rate >= 0.95 for N consecutive runs is no longer discovering failures; it has become a regression test rather than an exploration tool. Detecting and signalling this condition is the first step toward structured dataset rotation.
+
+**Constraints**
+- Staleness detection must use existing experiment log data only — no new external data sources
+- Staleness criterion: `pass_rate >= 0.95` for 3 or more consecutive runs against the same dataset
+- Must not auto-rotate or modify datasets — detection only; human review required for action
+- The staleness flag must appear in `experiments/summary.json` and `experiments/summary.md`
+
+**Deliverables**
+- Updated `scripts/report.py` to compute a per-dataset staleness flag and include it in `experiments/summary.json` and `experiments/summary.md`
+- `lab/adr/ADR-0005-dataset-freshness.md` documenting the staleness criteria, rationale, and the deliberate choice not to auto-rotate
+- `datasets/README.md` updated to document the staleness concept and recommended refresh actions
+- Unit tests in `tests/test_unit.py` covering: fewer than 3 runs (not stale), exactly 3 runs all passing (stale), 3 runs with one below threshold (not stale), mixed datasets (only stale ones flagged)
+
+**Acceptance criteria**
+- `experiments/summary.json` includes a `datasets` object with a `stale` boolean per dataset after this task is complete
+- `experiments/summary.md` includes a staleness column in the runs table
+- All new unit tests pass
+
+---
+
+## Task 016 — Automated self-improvement retrospective
+
+**Goal**  
+After each evaluation run, generate a structured retrospective memo that summarises what failed, what improved, drift status, and dataset freshness — creating a human-readable record of the self-improvement loop's state at each cycle. This closes the automated feedback loop described in the self-improving evaluation loop architecture.
+
+**Background**  
+The research framework (DSPy / Meta-Optimizer architecture) requires a feedback signal from each evaluation cycle to the next: classify failures, identify patterns, surface improvement candidates. This task implements the lightweight GitHub-native version of that signal: a committed Markdown memo that a human reviewer (or a future mutation agent) can consume to drive the next instruction improvement cycle.
+
+**Constraints**
+- The retro script must use the GitHub Copilot CLI for its LLM synthesis call (if any); no direct HTTP calls
+- Each memo must be committed as `experiments/retros/retro_NNN.md` (matching run number); never overwrite an existing memo
+- The retro must not consume excessive tokens: the LLM call (if used) must be a single focused prompt, not a full re-evaluation
+- If no LLM call is needed (all content is derived from structured data), the script should work without credentials
+
+**Deliverables**
+- `scripts/generate_retro.py` — reads an experiment log (`experiments/run_NNN.json`) and optionally the drift report and freshness flag; writes a structured Markdown memo to `experiments/retros/retro_NNN.md`
+- `experiments/retros/` directory with a `README.md` explaining the memo format
+- A GitHub Actions step added to `evaluate.yml` to generate the retro after each run and commit it
+- Unit tests in `tests/test_unit.py` covering: memo is created with correct filename, memo contains all required sections, existing memo is not overwritten
+
+**Memo format** (`experiments/retros/retro_NNN.md`)
+
+```markdown
+# Retrospective — run_NNN — <timestamp>
+
+## Run summary
+- Agent: <agent file>
+- Dataset: <dataset file>
+- Pass rate: <pass_rate>
+- Mean score: <mean_score>
+
+## Failures
+| Scenario | Score | Expected |
+|----------|-------|----------|
+| ...      | ...   | ...      |
+
+## Drift status
+- Baseline: <word count>
+- Candidate: <word count>
+- Growth: <pct>% — <within threshold / EXCEEDS THRESHOLD>
+
+## Dataset freshness
+- <dataset>: <stale / fresh> (<N consecutive high-pass-rate runs>)
+
+## Recommended next actions
+- [ ] (auto-generated or human-filled)
+```
+
+**Acceptance criteria**
+- `python scripts/generate_retro.py --experiment experiments/run_001.json --output experiments/retros/retro_001.md` produces a well-formed Markdown file at the specified path
+- The script exits non-zero if the output file already exists (immutability rule)
+- The evaluate workflow commits `experiments/retros/retro_NNN.md` alongside `results/run_NNN.json` and `experiments/run_NNN.json`
+- All new unit tests pass
+
