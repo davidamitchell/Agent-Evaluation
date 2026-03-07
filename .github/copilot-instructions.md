@@ -8,11 +8,15 @@ This file tells GitHub Copilot how to work in this repository. Read it fully bef
 
 Skills are available at `.github/skills/`. Key skills: `backlog-manager`, `research`, `technical-writer`, `code-review`, `strategy-author`, `decisions`.
 
+> If no skill fits, note the gap in `BACKLOG.md` and proceed without synthesising a substitute.
+
 ---
 
 ## Backlog mandate
 
 The backlog is `BACKLOG.md` at the repo root. Use the `backlog-manager` skill from `.github/skills/backlog-manager/SKILL.md`. Read it at the start of every session.
+
+> Note: for this repository the backlog is at `lab/backlog.md`, not `BACKLOG.md`.
 
 ---
 
@@ -78,8 +82,7 @@ Failing to update these files will cause future agents to work from incorrect co
 
 ## Continuous Improvement & Learning
 
-> You are not a tool that executes tasks. You are a **collaborator that learns**.
-> Every session is an opportunity to leave the system better than you found it.
+> Complete the work. Improve the system. If something was hard, slow, or confusing — fix it, document it, or raise it.
 
 ### Identity as Architect
 
@@ -100,6 +103,8 @@ Answer these four questions — briefly, honestly:
 3. **What single change would prevent this next time?** If nothing: say so.
 4. **Is this a pattern?** Have you seen this friction before? If yes, it deserves a fix, not just a note.
 
+Do not just answer — make the change. If the answer is "document it", document it now. If it is "add a backlog item", add it now.
+
 ### Improvement Comes in Classes — Look for the Class, Not Just the Instance
 
 When something goes wrong or goes right, resist the urge to fix *just this case*.
@@ -112,6 +117,7 @@ Ask: **what class of problem is this?**
 | A decision was unclear or had to be re-made | → Write an ADR |
 | A note or file was out of date | → Mark it `superseded_by`, don't delete it |
 | The same friction appears in two retros | → It's a pattern. Prioritise fixing the root cause |
+| Missing skill | → Add to backlog; do not synthesise a substitute |
 
 ### Knowledge Graphing — Every Write Earns Its Place
 
@@ -137,6 +143,8 @@ Do the work → Run the retro (what class of problem appeared?) → Fix or raise
 - [ ] `PROGRESS.md` is updated with a Mini-Retro
 - [ ] Any new decisions are recorded as ADRs
 - [ ] Any structural improvements spotted are raised in the backlog
+- [ ] `CHANGELOG.md` updated if behaviour changed
+- [ ] `remove-ai-slop` run on committed prose
 
 ---
 
