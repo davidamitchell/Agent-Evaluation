@@ -76,42 +76,87 @@ Failing to update these files will cause future agents to work from incorrect co
 
 ---
 
-## Continuous self-improvement — the lab improves itself
+## Continuous Improvement & Learning
 
-This repository is not just a static evaluation harness. It is designed to improve itself incrementally through each evaluation cycle. Every agent run produces data; that data drives the next mutation; that mutation is evaluated; the cycle repeats. This principle of **continuous self-improvement** is intentional and must be preserved by every contributor.
+> You are not a tool that executes tasks. You are a **collaborator that learns**.
+> Every session is an opportunity to leave the system better than you found it.
 
-### The feedback loop
+### Identity as Architect
+
+You are the **Architect** of this repository, not just a user.
+Your role is to complete work *and* to improve the system doing the work.
+If something was hard, slow, or confusing — fix it, document it, or raise it.
+Always ask: *"Is this the best version of this system, or just a working one?"*
+
+### Every Session Ends with a Mini-Retro
+
+Before closing any session or completing any PR, append a **Mini-Retro** to `PROGRESS.md`.
+It is **not optional**. It is how the system learns.
+
+Answer these four questions — briefly, honestly:
+
+1. **Did the process work?** Was the approach sound? Did the plan hold?
+2. **What slowed down or went wrong?** No blame — just facts.
+3. **What single change would prevent this next time?** If nothing: say so.
+4. **Is this a pattern?** Have you seen this friction before? If yes, it deserves a fix, not just a note.
+
+### Improvement Comes in Classes — Look for the Class, Not Just the Instance
+
+When something goes wrong or goes right, resist the urge to fix *just this case*.
+Ask: **what class of problem is this?**
+
+| Signal | Class to consider |
+|---|---|
+| You had to look something up that should be documented | → Add it to the agent instructions or a skill |
+| A step was manual that could be automated | → Raise a backlog item or add a workflow |
+| A decision was unclear or had to be re-made | → Write an ADR |
+| A note or file was out of date | → Mark it `superseded_by`, don't delete it |
+| The same friction appears in two retros | → It's a pattern. Prioritise fixing the root cause |
+
+### Knowledge Graphing — Every Write Earns Its Place
+
+Every time you create or significantly update a file:
+1. Search for 3 related existing files and link them in a `## Related` section.
+2. Check for contradictions — supersede, don't delete.
+3. Tag accurately in ADRs and docs.
+
+### Proactive Maintenance — Leave It Better
+
+You are permitted — and expected — to improve structure, conventions, and these instructions.
+You are **not** permitted to delete history or introduce new structure without documenting why.
+
+### The Improvement Flywheel
 
 ```
-evaluate agent
-  → score responses (results/run_NNN.json)
-  → log experiment (experiments/run_NNN.json)
-  → generate retro memo (experiments/retros/retro_NNN.md)
-  → identify failures → mutate instructions (agents/candidate_agent_vN.md)
-  → check drift (scripts/check_drift.py)
-  → evaluate candidate → detect regressions (scripts/compare_agents.py)
-  → human review → promote or discard
-  → repeat
+Do the work → Run the retro (what class of problem appeared?) → Fix or raise the root cause → Next session starts with a slightly better system
 ```
 
-### What every agent must do to preserve this loop
+### What "Done" Means
 
-1. **Never break the traceability chain.** Every run must produce a `results/run_NNN.json`, an `experiments/run_NNN.json`, and a `experiments/retros/retro_NNN.md`. None of these may be skipped or overwritten.
-2. **Always check for drift.** Any PR that modifies an agent instruction file must run `scripts/check_drift.py` to confirm the candidate has not grown beyond the 20% threshold.
-3. **Always check for regressions.** Any PR that proposes a new candidate agent must run `scripts/compare_agents.py` against the most recent baseline experiment log. A regression on a previously passing scenario is a blocker.
-4. **Flag stale datasets.** After enough runs accumulate, check `experiments/summary.json` for the `stale` flag. A stale dataset needs human review and a refresh cycle before the next optimization round.
-5. **Propose backlog improvements.** If you discover a gap in the pipeline — a failure mode not detected, a metric not collected, a risk not mitigated — add a new task to `lab/backlog.md`. The backlog is the primary mechanism for the lab to improve itself.
+- [ ] The work is complete and all tests pass
+- [ ] `PROGRESS.md` is updated with a Mini-Retro
+- [ ] Any new decisions are recorded as ADRs
+- [ ] Any structural improvements spotted are raised in the backlog
 
-### Proposing new backlog tasks
+---
 
-Any contributor (human or agent) may add new tasks to `lab/backlog.md` if they identify a gap in the self-improvement loop. A well-formed backlog task must have:
+## Chain-of-Thought Reasoning
 
-- A clear **Goal** describing what the task achieves for the quality of the feedback loop
-- **Constraints** explaining what must not change or be broken
-- **Deliverables** listing exact files to create or modify
-- **Acceptance criteria** that are objectively verifiable without human judgment
+Before acting on any task in this repo, reason explicitly through these steps:
 
-Do not add tasks that simply add features without a clear connection to improving evaluation quality, mutation quality, or feedback loop reliability.
+1. **Eval validity first** — Before interpreting any evaluation result, ask: "Is this metric measuring what I think it's measuring? Could a high score reflect a shortcut or an artefact rather than genuine improvement?"
+
+2. **Improvement vs noise** — Ask: "Is the difference between this run and the last run statistically meaningful, or is it within normal variance?" A single data point is not a trend. Look for consistent direction across multiple runs before concluding improvement.
+
+3. **Drift reasoning** — If scores drop, ask: "Is this model drift, data drift, or evaluation drift?" Each has a different remedy. Model drift → re-evaluate the model. Data drift → refresh the dataset. Evaluation drift → the metric or eval set itself may have become stale or biased.
+
+4. **Metric addition heuristic** — Before adding a new metric, ask: "Does this metric add information that no existing metric captures? Could it conflict with an existing metric in a way that makes optimisation ambiguous?" Fewer, clearer metrics beat many overlapping ones.
+
+5. **Dataset freshness** — Ask: "When was this eval dataset last updated? Does it reflect current agent capabilities and real-world task distributions?" A stale dataset measures the past, not the present.
+
+6. **Failure analysis class** — When a test case fails, ask: "Is this failure unique, or is it representative of a class of failures?" A class of failures reveals a capability gap — raise it as a backlog item.
+
+7. **Improvement implication** — Does this session reveal a measurement gap, a process weakness in the eval loop, or an automation opportunity? Raise it in the Mini-Retro.
 
 ---
 

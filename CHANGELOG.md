@@ -14,3 +14,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - PROGRESS.md for append-only session history
 - CHANGELOG.md (this file)
 - docs/adr/ with ADR index and first decision record
+- Unified `Continuous Improvement & Learning` framework in copilot-instructions.md
+- `Chain-of-Thought Reasoning` section in copilot-instructions.md, tailored to agent evaluation work
+
+### Changed
+- Replaced repo-specific "Continuous self-improvement" section in copilot-instructions.md with the shared unified framework
