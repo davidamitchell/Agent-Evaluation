@@ -4,6 +4,36 @@ This file tells GitHub Copilot how to work in this repository. Read it fully bef
 
 ---
 
+## Skills
+
+Skills are available at `.github/skills/`. Key skills: `backlog-manager`, `research`, `technical-writer`, `code-review`, `strategy-author`, `decisions`.
+
+---
+
+## Backlog mandate
+
+The backlog is `BACKLOG.md` at the repo root. Use the `backlog-manager` skill from `.github/skills/backlog-manager/SKILL.md`. Read it at the start of every session.
+
+---
+
+## ADR mandate
+
+Every non-trivial architectural or design decision must be recorded as an ADR in `docs/adr/`. Use the `decisions` skill from `.github/skills/decisions/SKILL.md`. Format is MADR. Files named `docs/adr/NNNN-short-title.md`.
+
+---
+
+## PROGRESS.md mandate
+
+Append a dated entry to `PROGRESS.md` after every meaningful session or PR. Never edit old entries — append only. Format: `## YYYY-MM-DD` then what changed and why. Append-only prevents merge conflicts.
+
+---
+
+## CHANGELOG.md mandate
+
+Record every user-facing change in `CHANGELOG.md`. Follow Keep-a-Changelog 1.0.0. New entries go under `## [Unreleased]` at the top.
+
+---
+
 ## Repository purpose
 
 This repository is an experimental system for evaluating and improving AI agent instruction sets. It has two domains that must remain cleanly separated:
