@@ -203,12 +203,12 @@ JSON object:
 
 All scripts in `scripts/` must:
 
-- Use only Python stdlib plus the existing GitHub Models API call (no new pip dependencies unless a task explicitly introduces one)
+- Use only Python stdlib plus subprocess calls to the GitHub Copilot CLI (no new pip dependencies unless a task explicitly introduces one)
 - Accept all configurable inputs as command-line arguments with `argparse`
-- Read `GITHUB_TOKEN` from the environment (never accept it as a CLI argument)
+- Read `COPILOT_GITHUB_TOKEN` from the environment (never accept it as a CLI argument)
 - Exit non-zero with a clear message on any unrecoverable error
 - Be independently runnable: `python scripts/<script>.py --help` must print usage
-- Use `temperature=0` for all model calls that require deterministic output (scoring, evaluation)
+- Use the GitHub Copilot CLI (`copilot -p "..." --autopilot --allow-all`) for all model interactions — no direct HTTP API calls
 
 The existing `scripts/run_evaluation.py` is the reference implementation. Match its structure and style when adding new scripts.
 
@@ -218,14 +218,15 @@ The existing `scripts/run_evaluation.py` is the reference implementation. Match 
 
 The evaluation pipeline runs in GitHub Actions. The primary workflow is `.github/workflows/evaluate.yml`, triggered on:
 - Push to `agents/**`, `datasets/**`, or `scripts/run_evaluation.py`
-- Manual `workflow_dispatch` (with optional `dataset`, `agent`, and `model` inputs)
+- Manual `workflow_dispatch` (with optional `dataset` and `agent` inputs)
 
-The workflow calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
+The workflow installs the GitHub Copilot CLI (`npm install -g @github/copilot`), calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
 
 To run the pipeline locally for testing:
 
 ```bash
-export GITHUB_TOKEN=<your-token>
+# Prerequisites: npm install -g @github/copilot
+export COPILOT_GITHUB_TOKEN=<your-token>
 python scripts/run_evaluation.py \
   --dataset datasets/example.json \
   --agent agents/default_agent.md \
@@ -242,7 +243,7 @@ There is no other build system, test runner, or dependency installation step. Th
 These rules apply to every PR in this repository regardless of which task is being implemented:
 
 1. **Never overwrite `agents/default_agent.md` automatically.** All instruction mutations must produce a new versioned candidate file. Human review is required before any candidate replaces the baseline.
-2. **Never commit secrets.** `GITHUB_TOKEN` is injected via Actions secrets; it must never appear in source files or result files.
+2. **Never commit secrets.** `COPILOT_GITHUB_TOKEN` is injected via Actions secrets; it must never appear in source files or result files.
 3. **Never modify a result or experiment file after it has been committed.** These are immutable records. If a run must be re-run, produce a new numbered file.
 4. **Do not mix agent definitions and evaluation infrastructure.** Changes to `agents/` should not require changes to `scripts/` and vice versa (except when a task explicitly bridges both).
 5. **Every new script must be reachable from a workflow.** If a script is added as a Deliverable, the corresponding task's Acceptance criteria will include a workflow step or manual invocation path.

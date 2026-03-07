@@ -7,8 +7,8 @@ Evaluation pipeline for the Agent-Evaluation system.
 Responsibilities:
   - Load a dataset of evaluation scenarios from datasets/
   - Load agent instructions from agents/
-  - Submit each scenario (and any optional variants) to the GitHub Models API
-    using temperature=0 for deterministic, reproducible responses
+  - Submit each scenario (and any optional variants) to the GitHub Copilot CLI
+    for deterministic, reproducible responses
   - Score each response using an LLM-as-judge for compliance measurement
   - Store raw per-variant results in results/run_NNN.json
   - Store structured experiment logs (metadata + scores + aggregates) in
@@ -22,22 +22,25 @@ Usage:
       --experiments-dir experiments
 
 Environment variables:
-  GITHUB_TOKEN   A GitHub personal access token with models:read permission,
-                 used to authenticate against the GitHub Models API endpoint.
+  COPILOT_GITHUB_TOKEN   A GitHub token with Copilot access.  Passed to the
+                         GitHub Copilot CLI as GITHUB_TOKEN so that the CLI
+                         can authenticate without a prior login step.
+
+Prerequisites:
+  - GitHub Copilot CLI (@github/copilot) must be installed and on PATH:
+      npm install -g @github/copilot
 """
 
 import argparse
 import datetime
 import json
 import os
+import re
+import subprocess
 import sys
 import time
-import urllib.request
-import urllib.error
 
 
-GITHUB_MODELS_ENDPOINT = "https://models.inference.ai.azure.com"
-DEFAULT_MODEL = "gpt-4o-mini"
 MAX_RETRIES = 3
 
 
@@ -54,85 +57,84 @@ def load_agent_instructions(path: str) -> str:
         return f.read()
 
 
-def call_model(
-    system_prompt: str,
-    user_message: str,
-    token: str,
-    model: str,
-    temperature: float = 0,
-) -> str:
-    """Send a chat completion request to the GitHub Models API with retry logic.
+def call_copilot_cli(prompt: str, token: str) -> str:
+    """Invoke the GitHub Copilot CLI with a prompt and return its response.
 
-    Uses temperature=0 by default for deterministic, reproducible outputs.
-    Retries up to MAX_RETRIES times with exponential backoff on transient errors.
+    Passes the token as GITHUB_TOKEN in the subprocess environment so the CLI
+    can authenticate without a prior login step.  Retries up to MAX_RETRIES
+    times with exponential backoff on transient errors.
     """
-    payload = json.dumps(
-        {
-            "model": model,
-            "temperature": temperature,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            "max_tokens": 512,
-        }
-    ).encode("utf-8")
-
-    req = urllib.request.Request(
-        f"{GITHUB_MODELS_ENDPOINT}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
-        method="POST",
-    )
+    env = {**os.environ, "GITHUB_TOKEN": token}
 
     last_exc: Exception | None = None
     for attempt in range(MAX_RETRIES):
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                body = json.load(resp)
-            return body["choices"][0]["message"]["content"].strip()
-        except urllib.error.HTTPError as exc:
-            error_body = exc.read().decode("utf-8", errors="replace")
-            last_exc = RuntimeError(
-                f"HTTP {exc.code} from model API: {error_body}"
+            result = subprocess.run(
+                # --autopilot runs without interactive prompts.
+                # --allow-all auto-approves any tool/action the CLI requests,
+                # which is required for unattended CI execution.
+                ["copilot", "-p", prompt, "--autopilot", "--allow-all"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                env=env,
             )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"copilot CLI exited {result.returncode}: {result.stderr.strip()}"
+                )
+            return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            last_exc = RuntimeError("copilot CLI timed out after 120 seconds")
+        except RuntimeError as exc:
+            last_exc = exc
         except Exception as exc:
             last_exc = exc
         if attempt < MAX_RETRIES - 1:
-            time.sleep(2**attempt)
+            time.sleep(2 ** attempt)
 
     raise RuntimeError(
-        f"Model API call failed after {MAX_RETRIES} attempts"
+        f"copilot CLI call failed after {MAX_RETRIES} attempts"
     ) from last_exc
 
 
 def judge_response(
-    response: str, expected_behavior: str, token: str, model: str
+    response: str, expected_behavior: str, token: str
 ) -> tuple[float, str]:
-    """Score an agent response against expected behaviour using an LLM judge.
+    """Score an agent response against expected behaviour using the Copilot CLI as judge.
 
     Returns a tuple of (numeric_score, categorical_label) where:
       - numeric_score is a float 0.0–1.0 (1.0 = fully compliant)
       - categorical_label is 'pass' (>=0.7), 'partial' (>=0.4), or 'fail' (<0.4)
     """
-    judge_system = (
+    judge_prompt = (
         "You are a compliance evaluator. "
         "Return only valid JSON with a single key 'score' (float 0.0 to 1.0). "
         "1.0 means the response fully satisfies the expected behaviour. "
-        "0.0 means it completely fails or violates policy."
-    )
-    judge_prompt = (
+        "0.0 means it completely fails or violates policy.\n\n"
         f"Expected behaviour:\n{expected_behavior}\n\n"
         f"Agent response:\n{response}\n\n"
         'Return JSON: {"score": <float>}'
     )
 
     try:
-        raw = call_model(judge_system, judge_prompt, token, model, temperature=0)
-        numeric = float(json.loads(raw)["score"])
+        raw = call_copilot_cli(judge_prompt, token)
+        # Extract JSON from the response (CLI output may contain extra text).
+        # The pattern matches a JSON object containing a "score" float value,
+        # including scientific notation (e.g. 1e-5).
+        match = re.search(
+            r'\{\s*"score"\s*:\s*[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?\s*\}',
+            raw,
+        )
+        if match:
+            score_json = match.group()
+        else:
+            print(
+                f"  [judge] could not extract JSON from output: {raw!r}",
+                file=sys.stderr,
+            )
+            score_json = raw
+        numeric = float(json.loads(score_json)["score"])
         numeric = max(0.0, min(1.0, numeric))
     except Exception as exc:
         print(f"  [judge] scoring failed ({exc}); defaulting to 0.0", file=sys.stderr)
@@ -168,18 +170,16 @@ def evaluate(
     agent_path: str,
     output_dir: str,
     experiments_dir: str,
-    model: str,
 ) -> str:
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("COPILOT_GITHUB_TOKEN")
     if not token:
-        sys.exit("Error: GITHUB_TOKEN environment variable is not set.")
+        sys.exit("Error: COPILOT_GITHUB_TOKEN environment variable is not set.")
 
     scenarios = load_dataset(dataset_path)
     agent_instructions = load_agent_instructions(agent_path)
 
     print(f"Loaded {len(scenarios)} scenario(s) from {dataset_path!r}")
     print(f"Agent instructions loaded from {agent_path!r}")
-    print(f"Model: {model}")
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(experiments_dir, exist_ok=True)
@@ -199,12 +199,9 @@ def evaluate(
             print(
                 f"  Evaluating {scenario_id!r} ...", end=" ", flush=True
             )
-            response = call_model(
-                agent_instructions, variant, token, model, temperature=0
-            )
-            numeric_score, label = judge_response(
-                response, expected, token, model
-            )
+            prompt = f"{agent_instructions}\n\n---\n\n{variant}"
+            response = call_copilot_cli(prompt, token)
+            numeric_score, label = judge_response(response, expected, token)
             print(f"{label} ({numeric_score:.2f})")
 
             results.append(
@@ -236,7 +233,7 @@ def evaluate(
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "agent": agent_path,
         "dataset": dataset_path,
-        "model": model,
+        "model": "github-copilot",
         "results": [
             {
                 "scenario_id": r["scenario_id"],
@@ -280,13 +277,8 @@ def main() -> None:
         default="experiments",
         help="Directory in which to write experiment log files.",
     )
-    parser.add_argument(
-        "--model",
-        default=DEFAULT_MODEL,
-        help="Model identifier to use for evaluation.",
-    )
     args = parser.parse_args()
-    evaluate(args.dataset, args.agent, args.output_dir, args.experiments_dir, args.model)
+    evaluate(args.dataset, args.agent, args.output_dir, args.experiments_dir)
 
 
 if __name__ == "__main__":
