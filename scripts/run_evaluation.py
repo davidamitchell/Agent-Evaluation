@@ -212,7 +212,7 @@ def evaluate(
                     "agent_response": response,
                     "score": label,
                     "numeric_score": numeric_score,
-                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
                 }
             )
 
@@ -230,7 +230,7 @@ def evaluate(
     # Write structured experiment log
     experiment = {
         "run": run_id,
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
         "agent": agent_path,
         "dataset": dataset_path,
         "model": "github-copilot",
