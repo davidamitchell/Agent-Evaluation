@@ -11,11 +11,6 @@ on:
         description: "Path to the agent instruction file"
         required: false
         default: "agents/default_agent.md"
-  push:
-    paths:
-      - "agents/**"
-      - "datasets/**"
-      - "scripts/run_evaluation.py"
 
 permissions:
   contents: write
