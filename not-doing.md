@@ -54,6 +54,30 @@ This is a living document. Items may be promoted to the backlog if circumstances
 
 ---
 
+## DSPy integration for inner-loop instruction optimization
+
+**Suggested:** Integrate DSPy (Khattab et al., 2023) as the inner-loop optimizer, using MIPRO to automatically search instruction and demonstration combinations via Bayesian optimization.
+
+**Decision:** Deferred. DSPy requires `pip install dspy` (an external dependency outside the stdlib-only constraint), approximately 370 LLM API calls per optimization run (cost-prohibitive for CI runs), and significant pipeline restructuring. The principles it implements — systematic instruction search, explicit inner/outer loop separation — are incorporated incrementally via Tasks 013–016 using only stdlib tooling. DSPy should be reconsidered if the repository's token budget and dependency constraints are relaxed in a future phase. See `lab/adr/ADR-0003-self-improvement-loop.md`.
+
+---
+
+## TextGrad for compound-pipeline optimization
+
+**Suggested:** Use TextGrad (Yuksekgonul et al., 2024) to perform "automatic differentiation via text", backpropagating natural language feedback signals through agent pipeline components.
+
+**Decision:** Out of scope. TextGrad is designed for compound AI systems with multiple independently optimizable components (retrieval, synthesis, citation). This repository evaluates single-instruction agents. TextGrad's per-component backpropagation overhead (multiple LLM calls per update step) is not justified for single-component agents and would exceed the token budget constraint. Revisit if the architecture evolves to multi-component pipelines.
+
+---
+
+## LLMLingua prompt compression
+
+**Suggested:** Apply LLMLingua to compress instruction files before each optimization cycle, achieving up to 20× compression with negligible performance loss to counter instruction drift.
+
+**Decision:** Not adopting. LLMLingua requires a pip installation (external dependency). The vendor-claimed 20× compression ratio is not independently validated in the academic literature reviewed. Instruction drift is mitigated instead by the explicit length-check gate in `scripts/check_drift.py` (Task 013) — a simpler, dependency-free approach appropriate to the current scale of this repository's instruction files. Revisit if instruction files grow to hundreds of lines and manual pruning becomes impractical.
+
+---
+
 ## Items reviewed but already in scope
 
 The following suggestions from the same review are **being implemented** (not in this file because they are in scope):
