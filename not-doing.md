@@ -10,7 +10,15 @@ This is a living document. Items may be promoted to the backlog if circumstances
 
 **Suggested:** Configure evaluation scripts via environment variables (e.g. `DATASET`, `AGENT`, `OUTPUT_DIR`) instead of command-line arguments.
 
-**Decision:** Not adopting. All scripts in this repository use `argparse` for their configuration interface. This makes scripts independently runnable (`python scripts/foo.py --help` works), testable without environment setup, and consistent with the reference implementation (`run_evaluation.py`). Environment variables are reserved for secrets (`GITHUB_TOKEN`) only.
+**Decision:** Not adopting. All scripts in this repository use `argparse` for their configuration interface. This makes scripts independently runnable (`python scripts/foo.py --help` works), testable without environment setup, and consistent with the reference implementation (`run_evaluation.py`). Environment variables are reserved for secrets (`COPILOT_GITHUB_TOKEN`) only.
+
+---
+
+## Direct HTTP API calls for model interactions
+
+**Suggested:** Call the GitHub Models API or GitHub Copilot API directly via `urllib.request` (or any other HTTP client) to send evaluation prompts and receive model responses.
+
+**Decision:** Not adopting. All model interactions use the GitHub Copilot CLI (`copilot -p "..." --autopilot --allow-all`) invoked via subprocess. This keeps the pipeline free of endpoint URLs, avoids managing HTTP authentication headers, and aligns with the CLI-based pattern used in this repository's sibling projects. Scripts read `COPILOT_GITHUB_TOKEN` from the environment and pass it as `GITHUB_TOKEN` to the CLI subprocess.
 
 ---
 

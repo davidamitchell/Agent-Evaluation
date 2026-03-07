@@ -77,13 +77,22 @@ experiments/
   summary.json              # Aggregate pass rates over time (added in Task 007)
   summary.md                # Human-readable version of summary.json
 
+tests/
+  __init__.py               # Package marker
+  conftest.py               # Path setup and shared fixtures
+  test_unit.py              # Unit tests — all business logic, mocked network
+  test_integration.py       # Integration tests — live CLI, real filesystem
+
+pytest.ini                  # pytest marker definitions
+
 lab/
   backlog.md                # Task list — the source of truth for planned work
   adr/                      # Architecture Decision Records
 
 .github/
   workflows/
-    evaluate.yml            # Main evaluation workflow (push + workflow_dispatch)
+    evaluate.yml            # On-demand evaluation workflow (workflow_dispatch only)
+    ci.yml                  # CI pipeline: unit + integration tests on every push/PR
     evaluate_on_pr.yml      # PR evaluation gate (added in Task 010)
 ```
 
@@ -203,29 +212,120 @@ JSON object:
 
 All scripts in `scripts/` must:
 
-- Use only Python stdlib plus the existing GitHub Models API call (no new pip dependencies unless a task explicitly introduces one)
+- Use only Python stdlib plus subprocess calls to the GitHub Copilot CLI (no new pip dependencies unless a task explicitly introduces one)
 - Accept all configurable inputs as command-line arguments with `argparse`
-- Read `GITHUB_TOKEN` from the environment (never accept it as a CLI argument)
+- Read `COPILOT_GITHUB_TOKEN` from the environment (never accept it as a CLI argument)
 - Exit non-zero with a clear message on any unrecoverable error
 - Be independently runnable: `python scripts/<script>.py --help` must print usage
-- Use `temperature=0` for all model calls that require deterministic output (scoring, evaluation)
+- Use the GitHub Copilot CLI (`copilot -p "..." --autopilot --allow-all`) for all model interactions — no direct HTTP API calls
 
 The existing `scripts/run_evaluation.py` is the reference implementation. Match its structure and style when adding new scripts.
 
 ---
 
+## Testing standards — mandatory on every PR
+
+This project ships to `main` on merge. That confidence comes entirely from the
+test suite. Every change must leave the suite green.
+
+### Test runner and setup
+
+- **Framework**: `pytest`. Run locally with `pytest tests/ -m "not integration" -v`.
+- **Setup lives in the CI workflow** (`.github/workflows/ci.yml`), not in test
+  files. `pip install pytest` is a workflow step, not a `requirements.txt` entry.
+- Unit tests: `tests/test_unit.py`. Integration tests: `tests/test_integration.py`.
+
+### Testing pyramid
+
+Apply three layers — unit → integration → (manual / watch-only on real evaluation runs).
+
+| Layer | What to test | Credentials needed |
+|-------|-------------|-------------------|
+| **Unit** | All business logic; every branch, boundary, and failure path | None — mock every network call |
+| **Integration** | Live external services: real Copilot CLI call, real filesystem write, full pipeline round-trip | `COPILOT_GITHUB_TOKEN` required |
+
+Do not skip layers. A bug found at unit level is 100× cheaper to fix than one
+found in production.
+
+### Unit tests
+
+- **Mock every network call.** The only real I/O allowed is `tmp_path` (pytest
+  built-in). Use `unittest.mock.patch` — no extra test libraries needed.
+- **Test behaviour, not implementation.** Assert on return values and
+  observable side-effects; do not assert on internal call order.
+- **Cover every public function.** Every function in `scripts/` must have at
+  least one happy-path test, one sad-path test, and explicit boundary tests
+  wherever thresholds appear.
+- **Naming convention**: `test_<unit>_<condition>_<expected_outcome>`
+  (e.g. `test_judge_response_score_above_1_clamped_to_1`).
+- **Test isolation**: tests must be independent and idempotent regardless of
+  run order. Use `patch.dict(os.environ, ...)` to manipulate env vars without
+  leaking state across tests.
+
+### Integration tests
+
+- Mark every integration test with `@pytest.mark.integration`.
+- Skip automatically when credentials are absent:
+  ```python
+  @pytest.mark.skipif(not os.getenv("COPILOT_GITHUB_TOKEN"), reason="COPILOT_GITHUB_TOKEN not set")
+  ```
+- Must prove **connectivity** (CLI installed, token authenticates) and at least
+  one **simple pathway** (minimal end-to-end scenario produces valid output files).
+- **The absence of `COPILOT_GITHUB_TOKEN` in CI is a blocker on shipping, not
+  a reason to fall back to unit tests alone.** Expose the secret in `ci.yml`
+  so the integration job actually runs.
+
+### External service configuration — testing pyramid
+
+Any code that wires up an external service (Copilot CLI, API client, MCP server)
+is production code and must be proven correct at every layer:
+
+| Layer | What to prove | How |
+|-------|--------------|-----|
+| **Unit** | Config is well-formed: JSON valid, required fields present, env var names correct | Mock the service; assert the config object |
+| **Integration** | The configuration actually connects — real credential, real service | `@pytest.mark.integration` + `skipif` |
+
+A config change that adds or modifies an external service entry is **not done**
+until the integration test exists and passes in CI.
+
+### TDD workflow — mandatory for bug fixes
+
+1. **Write a failing test** that reproduces the bug exactly. Run it; confirm red.
+2. **Fix the code.** Run the test; confirm green.
+3. **Run the full unit suite.** Confirm no regressions.
+
+This red-green cycle is permanent proof that the bug cannot silently return.
+
+### CI gate
+
+`.github/workflows/ci.yml` enforces:
+
+1. **`unit`** — runs on every push/PR; no credentials needed; must pass first.
+2. **`integration`** — runs after `unit` succeeds; requires `COPILOT_GITHUB_TOKEN`.
+
+`main` is only safe to merge when both jobs are green (or `integration` is
+skipped because the credential is absent in a fork — forks are expected; missing
+credentials in the main repo is a blocker).
+
+---
+
 ## Pipeline execution
 
-The evaluation pipeline runs in GitHub Actions. The primary workflow is `.github/workflows/evaluate.yml`, triggered on:
-- Push to `agents/**`, `datasets/**`, or `scripts/run_evaluation.py`
-- Manual `workflow_dispatch` (with optional `dataset`, `agent`, and `model` inputs)
+The **CI pipeline** runs in `.github/workflows/ci.yml`, triggered on every push
+and pull request. It runs unit tests first (no credentials required), then
+integration tests (requires `COPILOT_GITHUB_TOKEN` secret).
 
-The workflow calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
+The **evaluation pipeline** runs in `.github/workflows/evaluate.yml`, triggered
+**on demand only** via `workflow_dispatch`. It is not triggered automatically on
+push. Trigger it manually from the Actions tab to score an agent against a dataset.
+
+The workflow installs the GitHub Copilot CLI (`npm install -g @github/copilot`), calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
 
 To run the pipeline locally for testing:
 
 ```bash
-export GITHUB_TOKEN=<your-token>
+# Prerequisites: npm install -g @github/copilot
+export COPILOT_GITHUB_TOKEN=<your-token>
 python scripts/run_evaluation.py \
   --dataset datasets/example.json \
   --agent agents/default_agent.md \
@@ -242,7 +342,7 @@ There is no other build system, test runner, or dependency installation step. Th
 These rules apply to every PR in this repository regardless of which task is being implemented:
 
 1. **Never overwrite `agents/default_agent.md` automatically.** All instruction mutations must produce a new versioned candidate file. Human review is required before any candidate replaces the baseline.
-2. **Never commit secrets.** `GITHUB_TOKEN` is injected via Actions secrets; it must never appear in source files or result files.
+2. **Never commit secrets.** `COPILOT_GITHUB_TOKEN` is injected via Actions secrets; it must never appear in source files or result files.
 3. **Never modify a result or experiment file after it has been committed.** These are immutable records. If a run must be re-run, produce a new numbered file.
 4. **Do not mix agent definitions and evaluation infrastructure.** Changes to `agents/` should not require changes to `scripts/` and vice versa (except when a task explicitly bridges both).
 5. **Every new script must be reachable from a workflow.** If a script is added as a Deliverable, the corresponding task's Acceptance criteria will include a workflow step or manual invocation path.
@@ -251,11 +351,19 @@ These rules apply to every PR in this repository regardless of which task is bei
 
 ## How to validate your changes
 
-There is no test suite to run locally. Validation is done by running the pipeline:
+Run the unit test suite locally before pushing:
 
-1. Push your branch — the `evaluate.yml` workflow will trigger automatically if you modified `agents/`, `datasets/`, or `scripts/run_evaluation.py`.
-2. Check the Actions run output for errors.
-3. Confirm that new `results/run_NNN.json` and `experiments/run_NNN.json` files were committed back to the branch.
-4. Check that both files match the schemas for their version (see File format specifications above).
+```bash
+pip install pytest
+pytest tests/ -m "not integration" -v
+```
 
-For tasks that add new scripts, verify each Acceptance criterion by running the script directly with the exact command given in the task.
+All 49+ unit tests must pass. No credentials required.
+
+For evaluation pipeline changes, trigger the on-demand workflow manually:
+
+1. Go to the **Actions** tab → **Evaluate Agent** → **Run workflow**.
+2. Check the run output for errors.
+3. Confirm that new `results/run_NNN.json` and `experiments/run_NNN.json` files
+   were committed back to the branch.
+4. Check that both files match the schemas in [File format specifications](#file-format-specifications).

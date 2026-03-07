@@ -11,19 +11,9 @@ on:
         description: "Path to the agent instruction file"
         required: false
         default: "agents/default_agent.md"
-      model:
-        description: "Model to use for evaluation"
-        required: false
-        default: "gpt-4o-mini"
-  push:
-    paths:
-      - "agents/**"
-      - "datasets/**"
-      - "scripts/run_evaluation.py"
 
 permissions:
   contents: write
-  models: read
 
 jobs:
   evaluate:
@@ -38,14 +28,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Run evaluation pipeline
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           python scripts/run_evaluation.py \
             --dataset "${{ github.event.inputs.dataset || 'datasets/example.json' }}" \
             --agent "${{ github.event.inputs.agent || 'agents/default_agent.md' }}" \
-            --model "${{ github.event.inputs.model || 'gpt-4o-mini' }}" \
             --output-dir results \
             --experiments-dir experiments
 

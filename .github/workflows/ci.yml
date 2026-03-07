@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Unit tests ────────────────────────────────────────────────────────────
+  # All network calls are mocked; no secrets required.
+  # These must pass before any merge is considered safe.
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run unit tests
+        run: pytest tests/ -m "not integration" -v
+
+  # ── Integration tests ─────────────────────────────────────────────────────
+  # Exercises real connectivity to the GitHub Copilot CLI.
+  # Skipped automatically when COPILOT_GITHUB_TOKEN is absent (e.g. forks).
+  # The absence of the credential in CI is a blocker on shipping a change
+  # that modifies external-service wiring — not a reason to skip.
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    needs: unit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run integration tests
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: pytest tests/ -m integration -v
