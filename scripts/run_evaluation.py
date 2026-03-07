@@ -7,8 +7,9 @@ Evaluation pipeline for the Agent-Evaluation system.
 Responsibilities:
   - Load a dataset of evaluation scenarios from datasets/
   - Load agent instructions from agents/
-  - Submit each scenario (and any optional variants) to the GitHub Copilot API
-    using temperature=0 for deterministic, reproducible responses
+  - Submit each scenario (and any optional variants) to GitHub Copilot via the
+    GitHub CLI (gh api), using temperature=0 for deterministic, reproducible
+    responses
   - Score each response using an LLM-as-judge for compliance measurement
   - Store raw per-variant results in results/run_NNN.json
   - Store structured experiment logs (metadata + scores + aggregates) in
@@ -22,21 +23,26 @@ Usage:
       --experiments-dir experiments
 
 Environment variables:
-  COPILOT_GITHUB_TOKEN   A GitHub token with Copilot access, used to
-                         authenticate against the GitHub Copilot API endpoint.
+  COPILOT_GITHUB_TOKEN   A GitHub token with Copilot access.  Passed to the
+                         GitHub CLI (gh) as GH_TOKEN so that gh api can
+                         authenticate against the Copilot chat endpoint.
+
+Prerequisites:
+  - GitHub CLI (gh) must be installed and on PATH.
+  - The gh-copilot extension must be installed:
+      gh extension install github/gh-copilot
 """
 
 import argparse
 import datetime
 import json
 import os
+import subprocess
 import sys
 import time
-import urllib.request
-import urllib.error
 
 
-GITHUB_COPILOT_ENDPOINT = "https://api.githubcopilot.com"
+COPILOT_CHAT_ENDPOINT = "https://api.githubcopilot.com/chat/completions"
 DEFAULT_MODEL = "gpt-4o-mini"
 MAX_RETRIES = 3
 
@@ -54,14 +60,19 @@ def load_agent_instructions(path: str) -> str:
         return f.read()
 
 
-def call_model(
+def call_copilot_cli(
     system_prompt: str,
     user_message: str,
     token: str,
     model: str,
     temperature: float = 0,
 ) -> str:
-    """Send a chat completion request to the GitHub Copilot API with retry logic.
+    """Send a chat completion request via the GitHub CLI (gh api) with retry logic.
+
+    Uses the ``gh api`` command to call the Copilot chat endpoint so that all
+    network I/O goes through the GitHub CLI rather than raw Python HTTP calls.
+    ``GH_TOKEN`` is injected into the subprocess environment so that ``gh``
+    can authenticate without requiring a prior ``gh auth login``.
 
     Uses temperature=0 by default for deterministic, reproducible outputs.
     Retries up to MAX_RETRIES times with exponential backoff on transient errors.
@@ -76,36 +87,41 @@ def call_model(
             ],
             "max_tokens": 512,
         }
-    ).encode("utf-8")
-
-    req = urllib.request.Request(
-        f"{GITHUB_COPILOT_ENDPOINT}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
-        method="POST",
     )
+
+    cmd = [
+        "gh", "api",
+        "--method", "POST",
+        COPILOT_CHAT_ENDPOINT,
+        "--header", "Content-Type: application/json",
+        "--input", "-",
+    ]
+    env = {**os.environ, "GH_TOKEN": token}
 
     last_exc: Exception | None = None
     for attempt in range(MAX_RETRIES):
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                body = json.load(resp)
-            return body["choices"][0]["message"]["content"].strip()
-        except urllib.error.HTTPError as exc:
-            error_body = exc.read().decode("utf-8", errors="replace")
-            last_exc = RuntimeError(
-                f"HTTP {exc.code} from model API: {error_body}"
+            result = subprocess.run(
+                cmd,
+                input=payload,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=env,
             )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"gh api exited {result.returncode}: {result.stderr.strip()}"
+                )
+            body = json.loads(result.stdout)
+            return body["choices"][0]["message"]["content"].strip()
         except Exception as exc:
             last_exc = exc
         if attempt < MAX_RETRIES - 1:
-            time.sleep(2**attempt)
+            time.sleep(2 ** attempt)
 
     raise RuntimeError(
-        f"Model API call failed after {MAX_RETRIES} attempts"
+        f"Copilot CLI call failed after {MAX_RETRIES} attempts"
     ) from last_exc
 
 
@@ -131,7 +147,7 @@ def judge_response(
     )
 
     try:
-        raw = call_model(judge_system, judge_prompt, token, model, temperature=0)
+        raw = call_copilot_cli(judge_system, judge_prompt, token, model, temperature=0)
         numeric = float(json.loads(raw)["score"])
         numeric = max(0.0, min(1.0, numeric))
     except Exception as exc:
@@ -199,7 +215,7 @@ def evaluate(
             print(
                 f"  Evaluating {scenario_id!r} ...", end=" ", flush=True
             )
-            response = call_model(
+            response = call_copilot_cli(
                 agent_instructions, variant, token, model, temperature=0
             )
             numeric_score, label = judge_response(

@@ -69,6 +69,10 @@ scripts/
   report.py                 # Metrics reporter (added in Task 007)
   compare_agents.py         # Multi-agent comparison (added in Task 008)
 
+tests/
+  __init__.py
+  test_evaluation.py        # Test suite: CLI availability, unit tests, smoke test
+
 results/
   run_001.json              # Raw agent responses per evaluation run
 
@@ -203,29 +207,42 @@ JSON object:
 
 All scripts in `scripts/` must:
 
-- Use only Python stdlib plus the existing GitHub Copilot API call (no new pip dependencies unless a task explicitly introduces one)
+- Use only Python stdlib with no new pip dependencies unless a task explicitly introduces one
+- Use `subprocess` to call the GitHub CLI (`gh api`) for all Copilot model calls — **no direct HTTP calls to Copilot endpoints**
 - Accept all configurable inputs as command-line arguments with `argparse`
-- Read `COPILOT_GITHUB_TOKEN` from the environment (never accept it as a CLI argument)
+- Read `COPILOT_GITHUB_TOKEN` from the environment (never accept it as a CLI argument); pass it to `gh` as `GH_TOKEN` via the subprocess environment
 - Exit non-zero with a clear message on any unrecoverable error
 - Be independently runnable: `python scripts/<script>.py --help` must print usage
 - Use `temperature=0` for all model calls that require deterministic output (scoring, evaluation)
 
 The existing `scripts/run_evaluation.py` is the reference implementation. Match its structure and style when adding new scripts.
 
+**Prerequisites for running scripts locally:**
+- GitHub CLI (`gh`) must be installed and on PATH
+- The gh-copilot extension must be installed: `gh extension install github/gh-copilot`
+
 ---
 
 ## Pipeline execution
 
 The evaluation pipeline runs in GitHub Actions. The primary workflow is `.github/workflows/evaluate.yml`, triggered on:
-- Push to `agents/**`, `datasets/**`, or `scripts/run_evaluation.py`
+- Push to `agents/**`, `datasets/**`, `scripts/run_evaluation.py`, or `tests/**`
 - Manual `workflow_dispatch` (with optional `dataset`, `agent`, and `model` inputs)
 
-The workflow calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
+The workflow installs the `gh-copilot` extension, runs the test suite, calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
 
 To run the pipeline locally for testing:
 
 ```bash
+# Install prerequisites (once)
+gh extension install github/gh-copilot
+
 export COPILOT_GITHUB_TOKEN=<your-token>
+
+# Run the test suite
+python -m unittest discover -s tests -v
+
+# Run the evaluation
 python scripts/run_evaluation.py \
   --dataset datasets/example.json \
   --agent agents/default_agent.md \
@@ -233,7 +250,7 @@ python scripts/run_evaluation.py \
   --experiments-dir experiments
 ```
 
-There is no other build system, test runner, or dependency installation step. The pipeline is pure Python stdlib.
+There is no other build system or dependency installation step. The pipeline is pure Python stdlib, and model calls are delegated to the `gh` CLI.
 
 ---
 
@@ -251,10 +268,16 @@ These rules apply to every PR in this repository regardless of which task is bei
 
 ## How to validate your changes
 
-There is no test suite to run locally. Validation is done by running the pipeline:
+Run the test suite locally before pushing:
 
-1. Push your branch — the `evaluate.yml` workflow will trigger automatically if you modified `agents/`, `datasets/`, or `scripts/run_evaluation.py`.
-2. Check the Actions run output for errors.
+```bash
+python -m unittest discover -s tests -v
+```
+
+For full pipeline validation:
+
+1. Push your branch — the `evaluate.yml` workflow will trigger automatically if you modified `agents/`, `datasets/`, `scripts/run_evaluation.py`, or `tests/`.
+2. Check the Actions run output for errors (test suite runs before evaluation).
 3. Confirm that new `results/run_NNN.json` and `experiments/run_NNN.json` files were committed back to the branch.
 4. Check that both files match the schemas for their version (see File format specifications above).
 

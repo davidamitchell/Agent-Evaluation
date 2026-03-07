@@ -20,6 +20,7 @@ on:
       - "agents/**"
       - "datasets/**"
       - "scripts/run_evaluation.py"
+      - "tests/**"
 
 permissions:
   contents: write
@@ -37,9 +38,21 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install GitHub Copilot CLI extension
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: gh extension install github/gh-copilot --force
+
+      - name: Run test suite
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: python -m unittest discover -s tests -v
+
       - name: Run evaluation pipeline
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           python scripts/run_evaluation.py \
             --dataset "${{ github.event.inputs.dataset || 'datasets/example.json' }}" \
