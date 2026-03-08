@@ -8,6 +8,8 @@ This file tells GitHub Copilot how to work in this repository. Read it fully bef
 
 Skills are available at `.github/skills/`. Key skills: `backlog-manager`, `research`, `technical-writer`, `code-review`, `strategy-author`, `decisions`.
 
+Prose quality skills: `citation-discipline`, `speculation-control`, `remove-ai-slop`. Apply these whenever writing or editing documentation, ADRs, or any factual prose (see [Prose quality mandate](#prose-quality-mandate)).
+
 > If no skill fits, note the gap in `BACKLOG.md` and proceed without synthesising a substitute.
 
 ---
@@ -35,6 +37,18 @@ Append a dated entry to `PROGRESS.md` after every meaningful session or PR. Neve
 ## CHANGELOG.md mandate
 
 Record every user-facing change in `CHANGELOG.md`. Follow Keep-a-Changelog 1.0.0. New entries go under `## [Unreleased]` at the top.
+
+---
+
+## Prose quality mandate
+
+All documentation, ADRs, and factual prose committed to this repository must pass three quality checks before merge. Apply the corresponding skills from `.github/skills/`:
+
+- **`citation-discipline`** — every factual claim must cite a verifiable source at the point of claim. Unsourced claims must be flagged `[SOURCE NEEDED]`, not silently omitted. All acronyms must be expanded on first use.
+- **`speculation-control`** — interpretations, inferences, and causal claims must be distinguishable from facts. Causal language ("shaped", "framed", "determined") requires a cited source. If no source exists, reframe as description.
+- **`remove-ai-slop`** — formulaic transitions, symmetric paragraph structure, and alignment artifacts must be removed. Prose should read as direct technical writing, not a structured exposition template.
+
+These checks apply to: `README.md`, `PROGRESS.md`, ADRs in `lab/adr/` and `docs/adr/`, and any Markdown file committed as documentation.
 
 ---
 
@@ -145,6 +159,8 @@ Do the work → Run the retro (what class of problem appeared?) → Fix or raise
 - [ ] Any structural improvements spotted are raised in the backlog
 - [ ] `CHANGELOG.md` updated if behaviour changed
 - [ ] `remove-ai-slop` run on committed prose
+- [ ] `citation-discipline` applied to any factual claims (all claims cite a source; unsourced claims flagged)
+- [ ] `speculation-control` applied to factual prose (causal claims sourced; interpretations framed as interpretations)
 
 ---
 

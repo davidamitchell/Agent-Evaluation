@@ -143,15 +143,13 @@ CHANGELOG.md                    # User-facing change log (Keep a Changelog)
 
 ## Research foundation
 
-This repository was built on research conducted in [davidamitchell/Research](https://github.com/davidamitchell/Research). Two research items directly informed its design:
+Two research items in [davidamitchell/Research](https://github.com/davidamitchell/Research) directly informed this project's architecture:
 
-1. **[General Agent Optimization Framework](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-05-general-agent-optimization-framework.md)** (2026-03-05) — survey of automated prompt optimisation frameworks (APE, OPRO, TextGrad, DSPy) and the canonical architecture for a self-improving agent evaluation loop. This directly shaped the instruction-drift detection, score-regression gate, dataset-freshness detection, and retrospective-memo pipeline (see [`lab/adr/ADR-0003-self-improvement-loop.md`](lab/adr/ADR-0003-self-improvement-loop.md)).
+1. **[General Agent Optimization Framework](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-05-general-agent-optimization-framework.md)** (2026-03-05) — survey of automated prompt optimisation frameworks: APE ([Zhou et al., 2023](https://arxiv.org/abs/2211.01910)), OPRO ([Yang et al., 2024](https://arxiv.org/abs/2309.03409)), TextGrad ([Yuksekgonul et al., 2024](https://arxiv.org/abs/2406.07496)), and DSPy ([Khattab et al., 2023](https://arxiv.org/abs/2310.03714)). [ADR-0003](lab/adr/ADR-0003-self-improvement-loop.md) cites this item as the basis for the instruction-drift detection, score-regression gate, dataset-freshness detection, and retrospective-memo design.
 
-2. **[Guiding Headless Agents via LSP-Like Mechanisms for Org Policy Conformance](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-01-agent-lsp-policy-enforcement.md)** (2026-03-01) — analysis of how headless autonomous agents can be guided in real time to conform to an organisation's security, architectural, and engineering policies. This framed the core problem this repository addresses: measuring and improving agent compliance with defined behavioural rules.
+2. **[Guiding Headless Agents via LSP-Like Mechanisms for Org Policy Conformance](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-01-agent-lsp-policy-enforcement.md)** (2026-03-01) — analysis of how headless coding agents can be guided in real time to conform to an organisation's security, architectural, and engineering policies. Defines the compliance problem space this evaluation loop is built to address.
 
 ### Primary sources
-
-The research above draws on the following peer-reviewed papers and technical references:
 
 | Reference | Link |
 |-----------|------|
