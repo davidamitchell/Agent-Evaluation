@@ -6,7 +6,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `datasets/invariance_example.json`: migrated from dead `group_id`/`scenarios` schema to the standard flat `id`/`scenario`/`variants`/`expected_behavior` schema used by all other datasets. The old schema caused silent empty-prompt failures when passed to `run_evaluation.py`.
+- `scripts/run_evaluation.py` (`load_dataset`): added schema validation that raises `ValueError` with an actionable message when a record is missing `id`, `scenario`, has an empty `scenario` or `expected_behavior`, or contains empty strings in `variants`. Prevents empty prompts from reaching the Copilot CLI.
+- `scripts/run_evaluation.py` (`load_agent_instructions`): added validation that raises `ValueError` when the agent instructions file is empty.
+
 ### Added
+- `tests/test_unit.py`: new tests for schema validation in `load_dataset` and empty-file detection in `load_agent_instructions`.
 - `datasets/train/example_train.json`: five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) with variants, for use during instruction development.
 - `datasets/test/example_test.json`: five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) with variants, reserved for final agent evaluation.
 - `datasets/train/README.md` and `datasets/test/README.md`: split-level documentation with schema reference and usage examples.

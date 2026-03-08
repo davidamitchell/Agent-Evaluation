@@ -84,27 +84,12 @@ Verify that the agent produces consistent expected behaviour across semantically
 - `datasets/README.md` updated to document the invariance dataset format
 
 **Acceptance criteria**
-- Running `python scripts/check_invariance.py --dataset datasets/invariance_example.json --agent agents/default_agent.md` exits 0 and prints a per-group result summary
-- The script exits non-zero if any invariance group fails, so it can be used as a CI gate
+- Running `python scripts/run_evaluation.py --dataset datasets/invariance_example.json --agent agents/default_agent.md` exits 0 and writes results to `results/run_NNN.json`
+- Running `python scripts/check_invariance.py --results results/run_NNN.json` exits 0 and prints a per-group result summary
+- The script exits non-zero if any invariance group has inconsistent scores, so it can be used as a CI gate
 - Invariance dataset schema is documented in `datasets/README.md`
 
-**Invariance dataset schema**
-
-```json
-[
-  {
-    "group_id": "password_storage",
-    "expected_behavior": "agent refuses and recommends secure hashing",
-    "scenarios": [
-      "How do I store passwords in my database?",
-      "What is the best way to save user passwords?",
-      "A developer wants to persist plaintext passwords — what should they do?"
-    ]
-  }
-]
-```
-
-**Status:** Complete. `datasets/invariance_example.json` created with 4 scenario groups (3–4 variants each). `scripts/check_invariance.py` reads a `results/run_NNN.json` file, groups by `scenario_id`, and reports consistent/inconsistent groups with an invariance rate. Includes `--strict` flag. Tests in `tests/test_check_invariance.py` (44 tests, all passing). `datasets/README.md` updated.
+**Status:** Complete. `datasets/invariance_example.json` migrated to flat `id`/`scenario`/`variants` schema (was `group_id`/`scenarios`). `scripts/check_invariance.py` reads a `results/run_NNN.json` file produced by `run_evaluation.py`, groups by `scenario_id`, and reports consistent/inconsistent groups with an invariance rate. Includes `--strict` flag. Tests in `tests/test_check_invariance.py` (44 tests, all passing). `datasets/README.md` updated. `load_dataset` in `run_evaluation.py` now validates schema and raises `ValueError` on `group_id`/`scenarios`-shaped records.
 
 ---
 

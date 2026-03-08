@@ -40,6 +40,70 @@ class TestLoadDataset:
         with pytest.raises(FileNotFoundError):
             run_evaluation.load_dataset(str(tmp_path / "nonexistent.json"))
 
+    def test_load_dataset_raises_if_record_missing_id_and_scenario(self, tmp_path):
+        # group_id/scenarios schema (old invariance format) must be rejected
+        data = [{"group_id": "g1", "scenarios": ["q1", "q2"], "expected_behavior": "do X"}]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="missing required field 'id'"):
+            run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+
+    def test_load_dataset_raises_if_scenario_field_is_missing(self, tmp_path):
+        # Record has id but neither scenario nor variants
+        data = [{"id": "s1", "expected_behavior": "do X"}]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="missing required field 'scenario'"):
+            run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+
+    def test_load_dataset_accepts_valid_record_with_id_and_scenario(self, tmp_path):
+        data = [{"id": "s1", "scenario": "A question.", "expected_behavior": "answer"}]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        result = run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+        assert result == data
+
+    def test_load_dataset_accepts_valid_record_with_variants(self, tmp_path):
+        data = [{
+            "id": "s1",
+            "scenario": "A question.",
+            "variants": ["A question.", "Another phrasing."],
+            "expected_behavior": "answer",
+        }]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        result = run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+        assert result == data
+
+    def test_load_dataset_error_message_includes_record_index_and_path(self, tmp_path):
+        p = tmp_path / "mydata.json"
+        data = [
+            {"id": "ok", "scenario": "fine", "expected_behavior": "ok"},
+            {"group_id": "bad", "scenarios": ["x"], "expected_behavior": "y"},
+        ]
+        p.write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="record 1"):
+            run_evaluation.load_dataset(str(p))
+
+    def test_load_dataset_raises_if_variants_contains_empty_string(self, tmp_path):
+        data = [{
+            "id": "s1",
+            "scenario": "A question.",
+            "variants": ["A question.", ""],
+            "expected_behavior": "answer",
+        }]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="empty string"):
+            run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+
+    def test_load_dataset_raises_if_expected_behavior_is_empty(self, tmp_path):
+        data = [{"id": "s1", "scenario": "A question.", "expected_behavior": ""}]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="'expected_behavior'"):
+            run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+
+    def test_load_dataset_raises_if_scenario_is_empty_string(self, tmp_path):
+        data = [{"id": "s1", "scenario": "", "expected_behavior": "do X"}]
+        (tmp_path / "ds.json").write_text(json.dumps(data))
+        with pytest.raises(ValueError, match="'scenario'"):
+            run_evaluation.load_dataset(str(tmp_path / "ds.json"))
+
 
 # ── load_agent_instructions ───────────────────────────────────────────────────
 
@@ -53,6 +117,11 @@ class TestLoadAgentInstructions:
     def test_missing_file_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):
             run_evaluation.load_agent_instructions(str(tmp_path / "missing.md"))
+
+    def test_empty_agent_file_raises_value_error(self, tmp_path):
+        (tmp_path / "agent.md").write_text("")
+        with pytest.raises(ValueError, match="empty"):
+            run_evaluation.load_agent_instructions(str(tmp_path / "agent.md"))
 
 
 # ── next_run_number ───────────────────────────────────────────────────────────
