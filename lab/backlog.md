@@ -128,6 +128,8 @@ Implement the core experiment: given a baseline agent instruction file and evalu
 - The candidate file is valid Markdown and non-empty
 - A follow-up evaluation run using the candidate agent produces a result file that can be compared against the baseline run
 
+**Status:** Complete. `scripts/mutate_instructions.py` implemented. Accepts `--agent`, `--results`, `--version`, `--output-dir`, `--experiments-dir` arguments. Extracts fail/partial records, builds a brevity-constrained mutation prompt, calls Copilot CLI, writes candidate file and mutation log. 14 unit tests in `tests/test_mutate_instructions.py`.
+
 ---
 
 ## Task 005 — Train/test dataset separation

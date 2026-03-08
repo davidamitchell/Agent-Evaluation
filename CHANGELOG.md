@@ -7,6 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `scripts/mutate_instructions.py`: instruction mutation pipeline (Task 004 / W-0005). Given a baseline agent instruction file and evaluation results with failures, produces a candidate improved instruction file (`agents/candidate_agent_vN.md`) and a mutation log (`experiments/mutation_vN.json`). Uses Copilot CLI with a brevity-constrained prompt (±10% of current instruction length). Baseline agent file is never overwritten automatically.
+- `tests/test_mutate_instructions.py`: 14 unit tests for the mutation pipeline (all business logic mocked, no network calls).
 - `datasets/invariance_example.json`: four invariance scenario groups (3–4 variants each) covering password storage, ToS scraping, sensitive data logging, and SQL injection
 - `scripts/check_invariance.py`: standalone invariance validator — reads a results file, groups by scenario_id, reports consistent/inconsistent groups, invariance rate, and supports `--strict` mode
 - `tests/test_check_invariance.py`: 44 unit tests covering all-consistent groups, inconsistent groups, single-variant groups, empty results, and strict mode
