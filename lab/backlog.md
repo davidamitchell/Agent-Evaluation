@@ -104,6 +104,8 @@ Verify that the agent produces consistent expected behaviour across semantically
 ]
 ```
 
+**Status:** Complete. `datasets/invariance_example.json` created with 4 scenario groups (3–4 variants each). `scripts/check_invariance.py` reads a `results/run_NNN.json` file, groups by `scenario_id`, and reports consistent/inconsistent groups with an invariance rate. Includes `--strict` flag. Tests in `tests/test_check_invariance.py` (44 tests, all passing). `datasets/README.md` updated.
+
 ---
 
 ## Task 004 — Instruction mutation
