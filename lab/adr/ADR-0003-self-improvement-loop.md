@@ -83,11 +83,13 @@ See `not-doing.md` for documented deferrals including:
 
 ## References
 
-- Research item 2026-03-05: *General Agent Optimization Framework* — survey of APE, OPRO, TextGrad, DSPy
+- [General Agent Optimization Framework](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-05-general-agent-optimization-framework.md) (davidamitchell/Research, 2026-03-05) — survey of APE, OPRO, TextGrad, DSPy and the canonical self-improving evaluation loop architecture
 - `lab/backlog.md` — Tasks 013–016 implementing this ADR
 - `lab/adr/ADR-0004-instruction-drift.md` — detailed drift threshold rationale (created in Task 013)
 - `lab/adr/ADR-0005-dataset-freshness.md` — detailed staleness criteria and rotation policy (created in Task 015)
 - ADR-0002 — Benchmark policy collapse risk mitigation layers
-- Chroma Research (2025) — context rot and the lost-in-the-middle effect
-- Khattab et al. (2023) — DSPy: arXiv:2310.03714
-- Yang et al. (2024) — OPRO: arXiv:2309.03409
+- [Chroma Research (2025) — Context rot and the lost-in-the-middle effect](https://research.trychroma.com/context-rot)
+- [Khattab et al. (2023) — DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines (arXiv:2310.03714)](https://arxiv.org/abs/2310.03714)
+- [Yang et al. (2024) — OPRO: Large Language Models as Optimizers (arXiv:2309.03409)](https://arxiv.org/abs/2309.03409)
+- [Zhou et al. (2023) — APE: Large Language Models Are Human-Level Prompt Engineers (arXiv:2211.01910)](https://arxiv.org/abs/2211.01910)
+- [Yuksekgonul et al. (2024) — TextGrad: Automatic "Differentiation" via Text (arXiv:2406.07496)](https://arxiv.org/abs/2406.07496)

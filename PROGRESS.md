@@ -34,3 +34,18 @@ Rewrote the root `README.md` from a 30-line stub into a full project readme. Add
 2. What slowed down or went wrong? Nothing significant.
 3. What single change would prevent friction next time? Nothing — the sub-directory READMEs gave sufficient detail to write accurate top-level documentation.
 4. Is this a pattern? The root README being a thin stub is a common starting-point issue. Now that it is substantive, future changes to the pipeline should update it alongside the sub-directory READMEs.
+
+## 2026-03-08 — Add research reference links
+
+Added reference links to the davidamitchell/Research repository and the two research items that directly informed this project, plus hyperlinks to primary sources throughout the documentation.
+
+Changes:
+- `README.md`: new "Research foundation" section with links to the Research repo, both research items (General Agent Optimization Framework and Guiding Headless Agents via LSP-Like Mechanisms for Org Policy Conformance), and a primary-sources table (DSPy, OPRO, APE, TextGrad, Chroma Research context rot)
+- `lab/adr/ADR-0001-repository-purpose.md`: added Research repo and research item links to References section
+- `lab/adr/ADR-0003-self-improvement-loop.md`: upgraded plain-text references to hyperlinks (research item URL, arXiv papers for DSPy/OPRO/APE/TextGrad, Chroma Research context-rot URL)
+
+**Mini-Retro**
+1. Did the process work? Yes — the two research items were identified from ADR-0003 (explicit reference to General Agent Optimization Framework) and the thematic connection to policy compliance enforcement (Guiding Headless Agents). Primary source URLs were confirmed from the research item's Sources section and a web search for the Chroma context-rot paper.
+2. What slowed down or went wrong? Identifying the second research item required reading multiple completed items and cross-referencing with the repo's stated purpose. The explicit reference in ADR-0003 made the first item clear; the second required judgment.
+3. What single change would prevent friction next time? ADR-0001 should have included the research items in its initial References section — would have made the lineage unambiguous.
+4. Is this a pattern? Missing provenance links are a recurring gap; this session closes it for the two founding research items.

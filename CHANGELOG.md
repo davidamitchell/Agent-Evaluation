@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Research foundation section in `README.md`: links to `davidamitchell/Research` repo, two research items (General Agent Optimization Framework, Guiding Headless Agents via LSP-Like Mechanisms), and primary source references (DSPy, OPRO, APE, TextGrad, Chroma Research context rot)
+- Research repo and research item links in `lab/adr/ADR-0001-repository-purpose.md` References section
+- Hyperlinked references in `lab/adr/ADR-0003-self-improvement-loop.md`: research item URLs, arXiv paper links (DSPy, OPRO, APE, TextGrad), Chroma Research context rot URL
+
 ### Changed
 - Rewrote root `README.md`: added purpose, pipeline diagram, prerequisites, quick start, GitHub Actions instructions, test runner instructions, key concepts, and architecture references
 

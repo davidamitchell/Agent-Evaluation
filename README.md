@@ -141,4 +141,27 @@ CHANGELOG.md                    # User-facing change log (Keep a Changelog)
 
 ---
 
+## Research foundation
+
+This repository was built on research conducted in [davidamitchell/Research](https://github.com/davidamitchell/Research). Two research items directly informed its design:
+
+1. **[General Agent Optimization Framework](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-05-general-agent-optimization-framework.md)** (2026-03-05) — survey of automated prompt optimisation frameworks (APE, OPRO, TextGrad, DSPy) and the canonical architecture for a self-improving agent evaluation loop. This directly shaped the instruction-drift detection, score-regression gate, dataset-freshness detection, and retrospective-memo pipeline (see [`lab/adr/ADR-0003-self-improvement-loop.md`](lab/adr/ADR-0003-self-improvement-loop.md)).
+
+2. **[Guiding Headless Agents via LSP-Like Mechanisms for Org Policy Conformance](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-01-agent-lsp-policy-enforcement.md)** (2026-03-01) — analysis of how headless autonomous agents can be guided in real time to conform to an organisation's security, architectural, and engineering policies. This framed the core problem this repository addresses: measuring and improving agent compliance with defined behavioural rules.
+
+### Primary sources
+
+The research above draws on the following peer-reviewed papers and technical references:
+
+| Reference | Link |
+|-----------|------|
+| Khattab et al. (2023) — DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines | [arXiv:2310.03714](https://arxiv.org/abs/2310.03714) |
+| Yang et al. (2024) — OPRO: Large Language Models as Optimizers | [arXiv:2309.03409](https://arxiv.org/abs/2309.03409) |
+| Zhou et al. (2023) — APE: Large Language Models Are Human-Level Prompt Engineers | [arXiv:2211.01910](https://arxiv.org/abs/2211.01910) |
+| Yuksekgonul et al. (2024) — TextGrad: Automatic "Differentiation" via Text | [arXiv:2406.07496](https://arxiv.org/abs/2406.07496) |
+| Chroma Research (2025) — Context rot and the lost-in-the-middle effect | [research.trychroma.com/context-rot](https://research.trychroma.com/context-rot) |
+| DSPy documentation | [dspy.ai](https://dspy.ai/) |
+
+---
+
 > AI agents working in this repository: see [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
