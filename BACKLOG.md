@@ -84,9 +84,9 @@ Deliverables: `datasets/invariance_example.json`, `scripts/check_invariance.py`,
 
 ## W-0005
 
-status: ready
+status: done
 created: 2026-03-07
-updated: 2026-03-07
+updated: 2026-03-08
 
 ### Outcome
 
@@ -98,7 +98,7 @@ Task 004 from lab/backlog.md. Mutation is driven by evaluation output. Candidate
 
 ### Notes
 
-Deliverables: `scripts/mutate_instructions.py`, updated `agents/` with candidate file, experiment log entry.
+Complete. `scripts/mutate_instructions.py` implemented with `extract_failures`, `build_mutation_prompt`, `write_mutation_log`, and `mutate` functions. Tests in `tests/test_mutate_instructions.py` (14 unit tests). Mutation log written to `experiments/mutation_vN.json`. Candidate files written to `agents/candidate_agent_vN.md`.
 
 ---
 

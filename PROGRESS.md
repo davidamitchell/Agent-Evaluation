@@ -49,3 +49,20 @@ Changes:
 2. What slowed down or went wrong? Identifying the second research item required reading multiple completed items and cross-referencing with the repo's stated purpose. The explicit reference in ADR-0003 made the first item clear; the second required judgment.
 3. What single change would prevent friction next time? ADR-0001 should have included the research items in its initial References section — would have made the lineage unambiguous.
 4. Is this a pattern? Missing provenance links are a recurring gap; this session closes it for the two founding research items.
+
+## 2026-03-08 — Implement Task 004: instruction mutation (W-0005)
+
+Implemented `scripts/mutate_instructions.py` — the instruction mutation pipeline for Task 004. Given a baseline agent instruction file and evaluation results showing failures, the script produces a candidate improved instruction file using the Copilot CLI as an LLM.
+
+Changes:
+- `scripts/mutate_instructions.py`: new script with `extract_failures`, `build_mutation_prompt`, `write_mutation_log`, `mutate`, and `main`. Accepts `--agent`, `--results`, `--version`, `--output-dir`, `--experiments-dir` CLI arguments. Includes brevity constraint (±10% character count) in mutation prompt. Never overwrites the baseline agent file. Writes candidate to `agents/candidate_agent_vN.md` and mutation log to `experiments/mutation_vN.json`.
+- `tests/test_mutate_instructions.py`: 14 unit tests covering all business logic — `extract_failures` (all-pass, mixed, all-fail, empty, missing field), `build_mutation_prompt` (instruction text included, failure records included, brevity constraint present, bounds computed correctly, no-preamble instruction present), `write_mutation_log` (required fields, overwrite behaviour), and the no-failures early-exit path (LLM not called, no files written).
+- `BACKLOG.md`: updated W-0005 status to `done`.
+- `lab/backlog.md`: updated Task 004 status to `Complete`.
+- `CHANGELOG.md`: added entry under `[Unreleased]`.
+
+**Mini-Retro**
+1. Did the process work? Yes — the existing `call_copilot_cli` pattern in `run_evaluation.py` provided a clean template. Tests passed on first run.
+2. What slowed down or went wrong? Nothing significant. The constraint "copy, don't import" for `call_copilot_cli` required a brief decision on how to document the copy (added a comment in the script).
+3. What single change would prevent friction next time? The backlog task spec was detailed enough that no ambiguity arose. The pattern (copy with comment) is now documented in the script.
+4. Is this a pattern? Reusing `call_copilot_cli` across scripts will recur. If a third script needs it, extracting it to a shared `scripts/cli.py` module would be worth doing.
