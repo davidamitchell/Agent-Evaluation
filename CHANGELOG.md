@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Rewrote root `README.md`: added purpose, pipeline diagram, prerequisites, quick start, GitHub Actions instructions, test runner instructions, key concepts, and architecture references
+
 ### Added
 - .github/copilot-instructions.md with skills, backlog, ADR, PROGRESS and CHANGELOG mandates
 - .github/skills submodule pointing to davidamitchell/Skills
