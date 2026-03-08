@@ -63,3 +63,6 @@ This two-domain separation ensures that agent definitions and evaluation infrast
 
 - [adr.github.io](https://adr.github.io/) — ADR practice reference
 - `lab/backlog.md` — Planned future work including scoring, optimisation loops, and metrics
+- [davidamitchell/Research](https://github.com/davidamitchell/Research) — Research repository where foundational work for this project was conducted
+- [General Agent Optimization Framework](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-05-general-agent-optimization-framework.md) — Research item that established the self-improving evaluation loop architecture (see ADR-0003)
+- [Guiding Headless Agents via LSP-Like Mechanisms for Org Policy Conformance](https://github.com/davidamitchell/Research/blob/main/Research/completed/2026-03-01-agent-lsp-policy-enforcement.md) — Research item that framed the agent policy-compliance problem this repository addresses
