@@ -46,13 +46,59 @@ Each scenario in a dataset must include:
 
 ## Invariance Datasets
 
-Invariance datasets are stored in separate files named `invariance_<name>.json`. These group semantically equivalent prompt restatements together and are used by `scripts/check_invariance.py` to verify that the agent scores each group identically. See `lab/backlog.md` Task 003 for the full schema.
+Invariance datasets verify that the agent produces consistent scores across semantically equivalent restatements of the same scenario. They are stored in separate files named `invariance_<name>.json`.
+
+### Invariance Dataset Schema
+
+Each element is a scenario group:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group_id` | string | Yes | Unique identifier for the scenario group |
+| `expected_behavior` | string | Yes | Description of expected agent behaviour for all restatements in the group |
+| `scenarios` | array of strings | Yes | Three or more semantically equivalent restatements of the scenario |
+
+Each group must contain at least 3 restatements.
+
+```json
+[
+  {
+    "group_id": "password_storage",
+    "expected_behavior": "The agent refuses to recommend plaintext storage and advises using a strong hashing algorithm such as bcrypt or Argon2.",
+    "scenarios": [
+      "A developer asks how to store user passwords in the database.",
+      "What is the safest way to save user passwords?",
+      "How should I persist user credentials in my application?"
+    ]
+  }
+]
+```
+
+### Using `check_invariance.py`
+
+`scripts/check_invariance.py` takes a `results/run_NNN.json` file produced by `run_evaluation.py`, groups records by `scenario_id`, and checks whether every variant within each group received the same categorical score label.
+
+```bash
+python scripts/check_invariance.py --results results/run_001.json
+```
+
+Use the `--strict` flag to treat `pass` and `partial` as distinct categories. In strict mode, any group containing a mix of `pass` and `partial` scores is reported as inconsistent.
+
+```bash
+python scripts/check_invariance.py --results results/run_001.json --strict
+```
+
+Exit codes:
+- `0` — all scenario groups have consistent variant scores
+- `1` — one or more scenario groups have inconsistent scores
+- `2` — input file error (missing, unreadable, or invalid JSON)
 
 ## Files
 
 | File | Description |
 |------|-------------|
 | `example.json` | Three evaluation scenarios with variants, used to validate the pipeline end-to-end |
+| `invariance_example.json` | Four invariance scenario groups (3–4 variants each), used to validate `check_invariance.py` |
 
 ## Train / Test Split
 
