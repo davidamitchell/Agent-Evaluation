@@ -64,9 +64,9 @@ Complete. `scripts/run_evaluation.py` writes `experiments/run_NNN.json`. See `ex
 
 ## W-0004
 
-status: ready
+status: done
 created: 2026-03-07
-updated: 2026-03-07
+updated: 2026-03-08
 
 ### Outcome
 
@@ -78,7 +78,7 @@ Task 003 from lab/backlog.md. Invariance test scenarios live in dedicated datase
 
 ### Notes
 
-Deliverables: `datasets/invariance_example.json`, `scripts/check_invariance.py`, updated `datasets/README.md`.
+Complete. `datasets/invariance_example.json` (4 scenario groups, 3–4 variants each), `scripts/check_invariance.py` (reads results file, groups by scenario_id, reports consistent/inconsistent, --strict flag, exit codes 0/1/2), `tests/test_check_invariance.py` (44 tests), `datasets/README.md` updated.
 
 ---
 

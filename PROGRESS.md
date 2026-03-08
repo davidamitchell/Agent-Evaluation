@@ -66,3 +66,20 @@ Changes:
 2. What slowed down or went wrong? Nothing significant. The constraint "copy, don't import" for `call_copilot_cli` required a brief decision on how to document the copy (added a comment in the script).
 3. What single change would prevent friction next time? The backlog task spec was detailed enough that no ambiguity arose. The pattern (copy with comment) is now documented in the script.
 4. Is this a pattern? Reusing `call_copilot_cli` across scripts will recur. If a third script needs it, extracting it to a shared `scripts/cli.py` module would be worth doing.
+## 2026-03-08 — Task 003: Invariance validator
+
+Implemented dataset invariance checking (Task 003 / W-0004).
+
+Changes:
+- `datasets/invariance_example.json`: four scenario groups covering password storage, ToS scraping, sensitive-data logging, and SQL injection. Three or four semantically equivalent restatements per group.
+- `scripts/check_invariance.py`: standalone script that reads a `results/run_NNN.json` file, groups records by `scenario_id`, checks categorical score consistency, prints per-group pass/fail and an invariance rate summary. Supports `--strict` mode (pass ≠ partial). Exit codes: 0 (all consistent), 1 (any inconsistent), 2 (file error).
+- `tests/test_check_invariance.py`: 44 unit tests covering all cases — consistent groups, inconsistent groups, single-variant groups, empty results, strict mode, CLI exit codes.
+- `datasets/README.md`: added full invariance schema documentation and check_invariance.py usage guide.
+- `BACKLOG.md` W-0004 status updated to `done`.
+- `lab/backlog.md` Task 003 status updated to `Complete`.
+
+**Mini-Retro**
+1. Did the process work? Yes — the approach (results-file input rather than live agent runner) produced a simpler, more testable design than the original backlog deliverable spec implied.
+2. What slowed down or went wrong? Nothing significant. The problem spec was clear and the existing code patterns (conftest.py sys.path injection, class-based test organisation) made test structure straightforward.
+3. What single change would prevent friction next time? Nothing to add — the script conventions and test patterns in copilot-instructions.md matched actual practice.
+4. Is this a pattern? No new pattern identified.
