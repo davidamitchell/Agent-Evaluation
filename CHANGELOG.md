@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- `evaluate.yml`: added a `unit` job that runs all unit tests before the `evaluate` job. The `evaluate` job now declares `needs: unit`, so evaluation is blocked if any unit test fails.
+
 ### Added
 - `datasets/train/example_train.json`: five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) with variants, for use during instruction development.
 - `datasets/test/example_test.json`: five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) with variants, reserved for final agent evaluation.

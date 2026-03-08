@@ -106,3 +106,20 @@ All 107 unit tests pass.
 2. What slowed down or went wrong? Nothing significant. The workflow step pattern (`id: resolve_dataset` + `${{ steps.resolve_dataset.outputs.dataset }}`) required a two-step approach since GitHub Actions does not support conditional default values natively.
 3. What single change would prevent friction next time? Documenting the GitHub Actions output variable pattern in copilot-instructions.md would remove ambiguity for future workflow tasks.
 4. Is this a pattern? The two-step resolve-then-use pattern will likely recur in future workflow tasks that involve conditional dataset or agent selection.
+
+## 2026-03-08
+
+### Evaluate workflow: unit-test gate
+
+**What changed and why:**
+
+The `evaluate.yml` workflow was running the evaluation pipeline directly without first validating that unit tests pass. Run 22818609230 failed at the evaluation step (Copilot CLI timeout after 3 retries). The problem statement also explicitly required "Ensure testing is done first."
+
+- `.github/workflows/evaluate.yml`: added a `unit` job (checkout, setup-python, install pytest, run unit tests) that must succeed before the `evaluate` job runs. `evaluate` now declares `needs: unit`.
+- `CHANGELOG.md`: recorded the change under `[Unreleased]`.
+
+**Mini-Retro**
+1. Did the process work? Yes — the fix is a one-job addition to the workflow file; the pattern mirrors `ci.yml` which already has this gate.
+2. What slowed down or went wrong? Nothing significant. The evaluate workflow previously had no safety net — a broken test suite would be invisible until evaluation results were committed.
+3. What single change would prevent this next time? The copilot-instructions.md could explicitly state that every workflow touching evaluation code must include a unit test gate job.
+4. Is this a pattern? Yes — the same omission could recur in any future workflow that runs scripts directly. Adding a note to the instructions is warranted.
