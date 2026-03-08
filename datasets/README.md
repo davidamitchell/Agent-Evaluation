@@ -99,8 +99,21 @@ Exit codes:
 |------|-------------|
 | `example.json` | Three evaluation scenarios with variants, used to validate the pipeline end-to-end |
 | `invariance_example.json` | Four invariance scenario groups (3–4 variants each), used to validate `check_invariance.py` |
+| `train/example_train.json` | Five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) |
+| `test/example_test.json` | Five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) |
 
 ## Train / Test Split
 
-Future tasks will add `datasets/train/` and `datasets/test/` directories to support held-out evaluation and prevent instruction overfitting to training scenarios. See `lab/backlog.md` Task 005.
+Evaluation scenarios are split into two directories to prevent instruction overfitting:
+
+| Directory | Purpose |
+|-----------|---------|
+| `datasets/train/` | Scenarios used during agent development and instruction tuning. Agents may be indirectly optimised against these. |
+| `datasets/test/` | Held-out scenarios for final evaluation. Must not be used during instruction development or mutation. |
+
+The split is a **dataset-level convention**, not a runtime flag. Each directory contains its own JSON dataset files following the standard schema above.
+
+To evaluate against a specific split via GitHub Actions, set the `split` input to `train` or `test` when triggering the **Evaluate Agent** workflow. Set the `dataset` input directly to target any specific file, including `datasets/example.json`.
+
+`datasets/example.json` remains a standalone dataset used to validate the pipeline end-to-end. It is not part of the train/test split.
 

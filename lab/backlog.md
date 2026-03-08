@@ -152,6 +152,8 @@ Prevent overfitting agent instructions to the evaluation scenarios used during d
 - Running the workflow with `split: train` evaluates only scenarios in `datasets/train/`
 - Existing `datasets/example.json` continues to work as a standalone dataset
 
+**Status:** Complete. `datasets/train/example_train.json` (5 scenarios) and `datasets/test/example_test.json` (5 held-out scenarios) created, each with a README. `evaluate.yml` now accepts a `split` input (`train`/`test`) resolved in a "Resolve dataset path" step before the evaluation run. `datasets/README.md` updated with the split convention.
+
 ---
 
 ## Task 006 — Paraphrase scenario generation

@@ -7,6 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `datasets/train/example_train.json`: five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) with variants, for use during instruction development.
+- `datasets/test/example_test.json`: five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) with variants, reserved for final agent evaluation.
+- `datasets/train/README.md` and `datasets/test/README.md`: split-level documentation with schema reference and usage examples.
+- `evaluate.yml`: `split` workflow input (`train` or `test`) and a "Resolve dataset path" step that maps the split to the appropriate dataset file. `dataset` input takes precedence when set; no input defaults to `datasets/example.json`.
+- `datasets/README.md`: Train / Test Split section documenting the directory convention and how to use the `split` workflow input.
+
+### Added
 - `scripts/mutate_instructions.py`: instruction mutation pipeline (Task 004 / W-0005). Given a baseline agent instruction file and evaluation results with failures, produces a candidate improved instruction file (`agents/candidate_agent_vN.md`) and a mutation log (`experiments/mutation_vN.json`). Uses Copilot CLI with a brevity-constrained prompt (±10% of current instruction length). Baseline agent file is never overwritten automatically.
 - `tests/test_mutate_instructions.py`: 14 unit tests for the mutation pipeline (all business logic mocked, no network calls).
 - `datasets/invariance_example.json`: four invariance scenario groups (3–4 variants each) covering password storage, ToS scraping, sensitive data logging, and SQL injection

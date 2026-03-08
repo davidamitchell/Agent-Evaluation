@@ -83,3 +83,26 @@ Changes:
 2. What slowed down or went wrong? Nothing significant. The problem spec was clear and the existing code patterns (conftest.py sys.path injection, class-based test organisation) made test structure straightforward.
 3. What single change would prevent friction next time? Nothing to add — the script conventions and test patterns in copilot-instructions.md matched actual practice.
 4. Is this a pattern? No new pattern identified.
+
+## 2026-03-08
+
+### Task 005 — Train/test dataset separation
+
+**What changed and why:**
+
+Introduced a train/test split for evaluation datasets to prevent instruction overfitting.
+
+- `datasets/train/example_train.json`: 5 training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content), each with 3 variants.
+- `datasets/test/example_test.json`: 5 held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval), each with 3 variants. These scenarios were not used during instruction development.
+- `datasets/train/README.md` and `datasets/test/README.md`: split-level documentation with usage examples.
+- `datasets/README.md`: updated Files table and added Train / Test Split section replacing the forward-reference placeholder.
+- `.github/workflows/evaluate.yml`: added `split` input (`train` or `test`) and a "Resolve dataset path" step. When `dataset` is set directly it takes precedence; when `split` is set, the step maps it to the appropriate file; otherwise falls back to `datasets/example.json`.
+- `lab/backlog.md`: Task 005 marked Complete.
+
+All 107 unit tests pass.
+
+**Mini-Retro**
+1. Did the process work? Yes — the deliverables were concrete and unambiguous. Split is dataset-level (files in directories) rather than a runtime flag, which keeps the evaluation script unchanged and the convention easy to extend.
+2. What slowed down or went wrong? Nothing significant. The workflow step pattern (`id: resolve_dataset` + `${{ steps.resolve_dataset.outputs.dataset }}`) required a two-step approach since GitHub Actions does not support conditional default values natively.
+3. What single change would prevent friction next time? Documenting the GitHub Actions output variable pattern in copilot-instructions.md would remove ambiguity for future workflow tasks.
+4. Is this a pattern? The two-step resolve-then-use pattern will likely recur in future workflow tasks that involve conditional dataset or agent selection.
