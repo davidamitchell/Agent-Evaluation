@@ -106,3 +106,19 @@ All 107 unit tests pass.
 2. What slowed down or went wrong? Nothing significant. The workflow step pattern (`id: resolve_dataset` + `${{ steps.resolve_dataset.outputs.dataset }}`) required a two-step approach since GitHub Actions does not support conditional default values natively.
 3. What single change would prevent friction next time? Documenting the GitHub Actions output variable pattern in copilot-instructions.md would remove ambiguity for future workflow tasks.
 4. Is this a pattern? The two-step resolve-then-use pattern will likely recur in future workflow tasks that involve conditional dataset or agent selection.
+
+## 2026-03-08 — ADR-0005: Unified flat dataset schema
+
+Added `lab/adr/ADR-0005-dataset-schema.md` documenting the decision to use a single `id`/`scenario`/`expected_behavior`/`variants` schema for all evaluation datasets. The ADR records the context (invariance schema mismatch between `invariance_example.json` and `run_evaluation.py`), the decision, and the two-step pipeline consequence (`run_evaluation.py` → `check_invariance.py`).
+
+Updated `.github/copilot-instructions.md`:
+- Fixed ADR mandate path from `docs/adr/` to `lab/adr/` (the actual path used in this repo).
+- Added explicit "ADRs are mandatory" rule listing the three triggers: schema change, CLI interface change, costly-to-reverse decision.
+- Added "ADR written if any schema, interface, or architectural decision was made" to the "What Done Means" checklist.
+- Updated repo layout to include `ADR-0005-dataset-schema.md` and renumbered the planned dataset-freshness ADR from 0005 to 0006.
+
+**Mini-Retro**
+1. Did the process work? Yes — the deliverable was precisely specified in the problem statement. The main work was writing the ADR in the correct format and updating the instructions file.
+2. What slowed down or went wrong? The copilot-instructions.md had a stale path (`docs/adr/` instead of `lab/adr/`). This was caught while making the targeted update.
+3. What single change would prevent friction next time? The fix is already in this PR: the ADR mandate now points to the correct directory.
+4. Is this a pattern? Yes — copy-paste from a shared framework template left a wrong path in the instructions. The pattern of checking instructions for stale paths on every ADR-related PR would catch this early.
