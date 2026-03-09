@@ -24,7 +24,14 @@ The backlog is `BACKLOG.md` at the repo root. Use the `backlog-manager` skill fr
 
 ## ADR mandate
 
-Every non-trivial architectural or design decision must be recorded as an ADR in `docs/adr/`. Use the `decisions` skill from `.github/skills/decisions/SKILL.md`. Format is MADR. Files named `docs/adr/NNNN-short-title.md`.
+Every non-trivial architectural or design decision must be recorded as an ADR in `lab/adr/`. Use the `decisions` skill from `.github/skills/decisions/SKILL.md`. Format is MADR. Files named `lab/adr/NNNN-short-title.md`.
+
+**ADRs are mandatory.** Write an ADR in `lab/adr/` whenever you:
+- Change a data schema that other scripts depend on
+- Change a CLI interface that acceptance criteria reference
+- Make a decision that is costly to reverse
+
+The ADR must be committed in the same PR as the change. Never defer an ADR.
 
 ---
 
@@ -156,6 +163,7 @@ Do the work → Run the retro (what class of problem appeared?) → Fix or raise
 - [ ] The work is complete and all tests pass
 - [ ] `PROGRESS.md` is updated with a Mini-Retro
 - [ ] Any new decisions are recorded as ADRs
+- [ ] ADR written if any schema, interface, or architectural decision was made
 - [ ] Any structural improvements spotted are raised in the backlog
 - [ ] `CHANGELOG.md` updated if behaviour changed
 - [ ] `remove-ai-slop` run on committed prose
@@ -234,7 +242,8 @@ lab/
     ADR-0002-evaluation-scoring.md
     ADR-0003-self-improvement-loop.md   # Self-improvement loop architecture
     ADR-0004-instruction-drift.md       # Drift threshold policy (created in Task 013)
-    ADR-0005-dataset-freshness.md       # Dataset staleness policy (created in Task 015)
+    ADR-0005-dataset-schema.md          # Unified flat dataset schema (created in this PR)
+    ADR-0006-dataset-freshness.md       # Dataset staleness policy (created in Task 015)
 
 .github/
   workflows/

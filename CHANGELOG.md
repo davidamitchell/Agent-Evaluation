@@ -12,6 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `scripts/run_evaluation.py` (`load_agent_instructions`): added validation that raises `ValueError` when the agent instructions file is empty.
 
 ### Added
+- `lab/adr/ADR-0005-dataset-schema.md`: records the decision to use a single flat `id`/`scenario`/`expected_behavior`/`variants` schema for all evaluation datasets. Documents the context (invariance schema mismatch), the decision, and the consequences including the two-step pipeline flow required for invariance checking.
 - `tests/test_unit.py`: new tests for schema validation in `load_dataset` and empty-file detection in `load_agent_instructions`.
 - `datasets/train/example_train.json`: five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) with variants, for use during instruction development.
 - `datasets/test/example_test.json`: five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) with variants, reserved for final agent evaluation.
