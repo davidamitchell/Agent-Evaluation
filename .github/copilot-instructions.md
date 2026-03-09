@@ -476,6 +476,8 @@ The **evaluation pipeline** runs in `.github/workflows/evaluate.yml`, triggered
 **on demand only** via `workflow_dispatch`. It is not triggered automatically on
 push. Trigger it manually from the Actions tab to score an agent against a dataset.
 
+The workflow accepts two dropdown inputs: `agent` (choice of files in `agents/`) and `dataset` (choice of files in `datasets/`). When adding a new agent instruction file to `agents/` or a new dataset file to `datasets/`, also add the path to the corresponding `options` list in `evaluate.yml` so it appears in the dropdown.
+
 The workflow installs the GitHub Copilot CLI (`npm install -g @github/copilot`), calls `scripts/run_evaluation.py`, then commits the result file back to the repository.
 
 To run the pipeline locally for testing:

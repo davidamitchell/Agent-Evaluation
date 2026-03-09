@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-03-09
+
+Changed `evaluate.yml` workflow dispatch inputs from free-text fields to `type: choice` dropdowns. `dataset` now lists all four JSON files present in `datasets/` (including train and test splits). `agent` lists the two agent instruction files in `agents/`. Both inputs are `required: true` with the existing defaults retained as the first/default option. Removed `||` fallback expressions from the run step since a choice input always has a value.
+
+**Mini-Retro**
+1. Did the process work? Yes — single-file, surgical change.
+2. What slowed down or went wrong? Nothing; the workflow structure was clear and the GitHub Actions `type: choice` syntax is well-defined.
+3. What single change would prevent friction next time? A note in the copilot-instructions.md that new agent or dataset files should also be added to the `options` lists in `evaluate.yml` would keep the dropdowns in sync going forward.
+4. Is this a pattern? Not a recurring friction. Keeping static option lists in sync with repo contents is a known maintenance cost for `type: choice` inputs in GitHub Actions.
+
 ## 2026-03-07
 
 Standardisation pass: added .github/copilot-instructions.md with skills and backlog mandates. Added .github/skills submodule and sync-skills.yml. Created BACKLOG.md (porting items from lab/backlog.md). Created PROGRESS.md, CHANGELOG.md, docs/adr/. Updated README.md.
