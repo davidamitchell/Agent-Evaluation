@@ -122,3 +122,25 @@ Updated `.github/copilot-instructions.md`:
 2. What slowed down or went wrong? The copilot-instructions.md had a stale path (`docs/adr/` instead of `lab/adr/`). This was caught while making the targeted update.
 3. What single change would prevent friction next time? The fix is already in this PR: the ADR mandate now points to the correct directory.
 4. Is this a pattern? Yes — copy-paste from a shared framework template left a wrong path in the instructions. The pattern of checking instructions for stale paths on every ADR-related PR would catch this early.
+## 2026-03-08
+
+### Fix: invariance_example.json schema mismatch
+
+**What changed and why:**
+
+`datasets/invariance_example.json` used a `group_id`/`scenarios` schema that `run_evaluation.py` does not understand. Passing it to the evaluation pipeline produced empty prompts (`variants = [""]`), which caused the Copilot CLI to hang or fail on every scenario. The dataset was never migrated after the Task 003 design pivoted from a self-contained script to a two-step flow.
+
+Changes:
+- `datasets/invariance_example.json`: converted all 4 records from `group_id`/`scenarios` to `id`/`scenario`/`variants`/`expected_behavior`. First entry in `variants` matches `scenario`.
+- `scripts/run_evaluation.py` (`load_dataset`): added schema validation — raises `ValueError` with a clear, actionable message when a record is missing `id`, `scenario`, or `expected_behavior`, or contains empty strings in `variants`.
+- `scripts/run_evaluation.py` (`load_agent_instructions`): raises `ValueError` when the agent file is empty.
+- `tests/test_unit.py`: 9 new unit tests covering schema validation failure paths and happy paths, plus empty agent file detection. All 116 unit tests pass.
+- `datasets/README.md`: replaced the dead `group_id`/`scenarios` schema section with the two-step `run_evaluation.py` + `check_invariance.py` workflow. Updated Files table entry for `invariance_example.json`.
+- `lab/backlog.md`: Task 003 acceptance criteria updated to show the correct two-step CLI. Status note updated to reflect the schema migration.
+- `CHANGELOG.md`: added Fixed and Added entries under `[Unreleased]`.
+
+**Mini-Retro**
+1. Did the process work? Yes. The bug was well-specified. Adding failing tests before the fix confirmed the regression path and the fix resolved all 6 new test failures while keeping the prior 107 tests green.
+2. What slowed down or went wrong? The empty `expected_behavior` guard needed to handle both `None` and `""` — the existing `scenario.get("expected_behavior", "")` pattern meant a missing field defaulted silently to empty. The fix normalises this.
+3. What single change would prevent this next time? A schema validation step in `load_dataset` at the time Task 003 was implemented would have caught the mismatch on first use.
+4. Is this a pattern? Yes — design pivots that leave datasets in an inconsistent schema are a systemic risk. The new `load_dataset` validation makes any future schema mismatch fail fast with a clear message rather than producing silent bad output.

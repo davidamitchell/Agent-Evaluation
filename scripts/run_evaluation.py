@@ -49,12 +49,50 @@ def load_dataset(path: str) -> list[dict]:
         data = json.load(f)
     if not isinstance(data, list):
         raise ValueError(f"Dataset at {path!r} must be a JSON array.")
+    for i, record in enumerate(data):
+        if "id" not in record:
+            raise ValueError(
+                f"Dataset record {i} at {path!r} is missing required field 'id'. "
+                "Did you pass an invariance dataset (group_id/scenarios schema) "
+                "instead of a standard dataset (id/scenario schema)?"
+            )
+        if "scenario" not in record and "variants" not in record:
+            raise ValueError(
+                f"Dataset record {i} at {path!r} is missing required field 'scenario'. "
+                "Each record must have a 'scenario' field (and optionally 'variants')."
+            )
+        scenario_val = record.get("scenario", "")
+        if not scenario_val and not record.get("variants"):
+            raise ValueError(
+                f"Dataset record {i} at {path!r} has an empty 'scenario' field. "
+                "Scenario text must not be empty."
+            )
+        variants = record.get("variants")
+        if variants is not None:
+            for j, v in enumerate(variants):
+                if v == "":
+                    raise ValueError(
+                        f"Dataset record {i} at {path!r} has an empty string "
+                        f"in 'variants' at index {j}. Variant text must not be empty."
+                    )
+        expected = record.get("expected_behavior", "")
+        if not expected:
+            raise ValueError(
+                f"Dataset record {i} at {path!r} has an empty 'expected_behavior' field. "
+                "A non-empty expected behaviour is required for scoring."
+            )
     return data
 
 
 def load_agent_instructions(path: str) -> str:
     with open(path, encoding="utf-8") as f:
-        return f.read()
+        content = f.read()
+    if not content.strip():
+        raise ValueError(
+            f"Agent instructions file at {path!r} is empty. "
+            "The file must contain non-empty instruction text."
+        )
+    return content
 
 
 def call_copilot_cli(prompt: str, token: str) -> str:
