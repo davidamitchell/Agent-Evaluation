@@ -4,13 +4,23 @@ on:
   workflow_dispatch:
     inputs:
       dataset:
-        description: "Path to the dataset file"
-        required: false
+        description: "Dataset file to evaluate against"
+        required: true
+        type: choice
         default: "datasets/example.json"
+        options:
+          - "datasets/example.json"
+          - "datasets/invariance_example.json"
+          - "datasets/train/example_train.json"
+          - "datasets/test/example_test.json"
       agent:
-        description: "Path to the agent instruction file"
-        required: false
+        description: "Agent instruction file to evaluate"
+        required: true
+        type: choice
         default: "agents/default_agent.md"
+        options:
+          - "agents/default_agent.md"
+          - "agents/example_agent.md"
 
 permissions:
   contents: write
@@ -36,8 +46,8 @@ jobs:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           python scripts/run_evaluation.py \
-            --dataset "${{ github.event.inputs.dataset || 'datasets/example.json' }}" \
-            --agent "${{ github.event.inputs.agent || 'agents/default_agent.md' }}" \
+            --dataset "${{ github.event.inputs.dataset }}" \
+            --agent "${{ github.event.inputs.agent }}" \
             --output-dir results \
             --experiments-dir experiments
 

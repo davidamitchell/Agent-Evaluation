@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- `evaluate.yml`: `dataset` and `agent` workflow inputs changed from free-text to `type: choice` dropdowns. Options are populated from files that exist in the repository (`datasets/example.json`, `datasets/invariance_example.json`, `datasets/train/example_train.json`, `datasets/test/example_test.json` for dataset; `agents/default_agent.md`, `agents/example_agent.md` for agent). Both inputs are now `required: true`; the `||` fallback expressions in the run step have been removed.
+
 ### Fixed
 - `datasets/invariance_example.json`: migrated from dead `group_id`/`scenarios` schema to the standard flat `id`/`scenario`/`variants`/`expected_behavior` schema used by all other datasets. The old schema caused silent empty-prompt failures when passed to `run_evaluation.py`.
 - `scripts/run_evaluation.py` (`load_dataset`): added schema validation that raises `ValueError` with an actionable message when a record is missing `id`, `scenario`, has an empty `scenario` or `expected_behavior`, or contains empty strings in `variants`. Prevents empty prompts from reaching the Copilot CLI.

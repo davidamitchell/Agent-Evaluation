@@ -78,7 +78,15 @@ This is a living document. Items may be promoted to the backlog if circumstances
 
 ---
 
-## Items reviewed but already in scope
+## Dynamic population of `evaluate.yml` workflow_dispatch options
+
+**Suggested:** Automatically populate the `agent` and `dataset` dropdown options in `.github/workflows/evaluate.yml` at workflow trigger time so that newly added files appear without a manual YAML edit.
+
+**Decision:** Not feasible. GitHub Actions `workflow_dispatch` inputs of `type: choice` require a static `options` list in the YAML. Dynamic option generation (e.g., scanning the repository at trigger time) is not supported by the platform. The maintenance burden is mitigated by a note in `.github/copilot-instructions.md` instructing contributors to update the `options` lists when adding new agent or dataset files.
+
+---
+
+
 
 The following suggestions from the same review are **being implemented** (not in this file because they are in scope):
 
