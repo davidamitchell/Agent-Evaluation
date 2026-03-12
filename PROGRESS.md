@@ -2,6 +2,22 @@
 
 ---
 
+## 2026-03-11 — Backlog refinement: W-0012, W-0013, new W-0014
+
+Resolved two `needing_refinement` items and added one new backlog item. Changes are documentation-only (BACKLOG.md, CHANGELOG.md, PROGRESS.md).
+
+**W-0012** (adversarial probe dataset): The previous context left probe scenario categories underspecified. Without invariant linkage, there is no structured way to audit which policy rules have coverage. Added `invariant_ids` field requirement (links to rule IDs from `davidamitchell/Policy-LSP`). Clarified the probe dataset's purpose: verifying agents fail correctly on policy violations, not just behave correctly in the absence of violations. Status moved to `ready`.
+
+**W-0013** (adversarial generator): Novelty alone is insufficient as a generation criterion — a generated scenario that restates a well-covered invariant adds noise without closing gaps. Added a pre-staging `check_invariant_coverage()` step requirement: the script reads existing `invariant_ids` coverage, stages only scenarios that exercise at least one uncovered invariant, and logs rejected candidates to stderr with reason `"no new invariant coverage"`. Status moved to `ready`.
+
+**W-0014** (Policy-LSP conjunction judge): New `ready` item. Current pipeline uses judge-only scoring; a high judge score with a policy violation passes today — incorrect. New item specifies extending `run_evaluation.py` with `check_policy_violations()` (invokes `gov-lsp check` via subprocess), adding a `policy_violations` field to result records, and implementing conjunction logic: pass requires both `judge_score >= 0.7` and `gov_lsp_violations == 0`. Graceful degradation when binary is absent so existing CI is not broken. ADR required before implementation.
+
+**Mini-Retro**
+1. Did the process work? Yes — the problem statement was specific and the existing BACKLOG.md format provided a clear template.
+2. What slowed down or went wrong? The problem statement was cut off before the full W-0014 `check_policy_violations` signature was stated. Used the surrounding context (conjunction logic description, graceful-degradation requirement) to reconstruct a complete and internally consistent spec.
+3. What single change would prevent this next time? Nothing structural to change — truncated problem statements are an input quality issue, not a process issue.
+4. Is this a pattern? No.
+
 ## 2026-03-09
 
 Changed `evaluate.yml` workflow dispatch inputs from free-text fields to `type: choice` dropdowns. `dataset` now lists all four JSON files present in `datasets/` (including train and test splits). `agent` lists the two agent instruction files in `agents/`. Both inputs are `required: true` with the existing defaults retained as the first/default option. Removed `||` fallback expressions from the run step since a choice input always has a value.
