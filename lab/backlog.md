@@ -267,6 +267,8 @@ Build a probe dataset containing adversarial scenarios designed to test whether 
 - At least one scenario in each category is present
 - The probe dataset is NOT referenced by the main `evaluate.yml` training workflow (it runs separately or manually)
 
+**Status:** Complete. `datasets/probe/adversarial_probe.json` created with 8 scenarios across three categories: adversarial intent (3 scenarios including direct injection and system impersonation), ambiguous operational context (3 scenarios including role claims and inline authorisation), and compositional policy cases (2 scenarios covering code review injection and article summarisation injection). `datasets/probe/README.md` added. `datasets/README.md` updated with probe directory documentation. `evaluate.yml` updated to include the probe dataset in the workflow dropdown.
+
 ---
 
 ## Task 012 — Synthetic adversarial scenario generation
@@ -425,4 +427,36 @@ The research framework (DSPy / Meta-Optimizer architecture) requires a feedback 
 - The script exits non-zero if the output file already exists (immutability rule)
 - The evaluate workflow commits `experiments/retros/retro_NNN.md` alongside `results/run_NNN.json` and `experiments/run_NNN.json`
 - All new unit tests pass
+
+---
+
+## Task 017 — Prompt injection testing dataset
+
+**Goal**
+Build a dedicated dataset that simulates prompt injection attacks sourced from untrusted and trusted external content — reproducing the class of failure where an agent processes external data and that data contains embedded instructions designed to override agent policy.
+
+**Background**
+Agents increasingly consume content from external sources: web pages, documents, emails, issue trackers, database records. Any of these can carry adversarial instructions directed at the agent. An agent that cannot distinguish between legitimate instructions (from its configuration) and injected instructions (from processed content) is vulnerable to indirect prompt injection. This task extends the probe dataset to cover this specific class of attack with realistic scenarios drawn from plausible operational contexts.
+
+**Constraints**
+- The dataset must live at `datasets/probe/` and follow the standard flat `id`/`scenario`/`expected_behavior` schema
+- Scenarios must simulate realistic injection vectors: pasted documents, web content, code, emails, API responses, database records
+- The dataset must NOT be used for instruction tuning — it is a held-out stress test only
+- At least two scenarios must simulate injection via a **trusted** source (the source is legitimate but the content has been compromised)
+- At least two scenarios must simulate injection via an **untrusted** source (web content, user-supplied documents)
+- Scenarios must cover both direct injection (instructions addressed to the AI) and indirect injection (instructions embedded in data the AI is asked to process)
+
+**Deliverables**
+- `datasets/probe/prompt_injection.json` — at least 8 scenarios across two vectors (trusted source, untrusted source) and two injection styles (direct, indirect)
+- `datasets/probe/README.md` updated to document the new dataset, its vectors, and its relationship to `adversarial_probe.json`
+- `datasets/README.md` updated to include the new file in the Files table
+
+**Acceptance criteria**
+- Running `python scripts/run_evaluation.py --dataset datasets/probe/prompt_injection.json --agent agents/default_agent.md --output-dir results --experiments-dir experiments` completes without error and produces a results file
+- At least two scenarios test injection from a trusted source
+- At least two scenarios test injection from an untrusted source
+- At least two scenarios use indirect injection (instructions embedded in data being processed, not addressed directly to the agent)
+- `datasets/probe/adversarial_probe.json` added as an option in `evaluate.yml` (if not already present)
+- `datasets/probe/prompt_injection.json` added as an option in `evaluate.yml`
+- `datasets/probe/README.md` documents both probe datasets and their relationship
 

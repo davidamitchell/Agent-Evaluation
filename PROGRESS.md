@@ -170,3 +170,26 @@ Changes:
 2. What slowed down or went wrong? The empty `expected_behavior` guard needed to handle both `None` and `""` — the existing `scenario.get("expected_behavior", "")` pattern meant a missing field defaulted silently to empty. The fix normalises this.
 3. What single change would prevent this next time? A schema validation step in `load_dataset` at the time Task 003 was implemented would have caught the mismatch on first use.
 4. Is this a pattern? Yes — design pivots that leave datasets in an inconsistent schema are a systemic risk. The new `load_dataset` validation makes any future schema mismatch fail fast with a clear message rather than producing silent bad output.
+
+## 2026-03-15
+
+### Task 011 — Adversarial probe dataset (complete); Task 017 — Prompt injection testing (added to backlog)
+
+**What changed and why:**
+
+Resolved the "Prompt injection" GitHub issue by implementing the adversarial probe dataset (Task 011) and adding a dedicated prompt injection task to the backlog (Task 017).
+
+Changes:
+- `datasets/probe/adversarial_probe.json`: 8 adversarial scenarios across three categories — adversarial intent (direct injection, system impersonation, hidden HTML/code-comment injection), ambiguous operational context (penetration tester role claim, inline email authorisation, support-ticket nested instruction), and compositional policy cases (code review with injected comment directive, article summarisation with exfiltration post-script).
+- `datasets/probe/README.md`: documents the probe purpose, the three categories, expected pass/fail interpretation, and usage instructions.
+- `datasets/README.md`: added Files table entry for `probe/adversarial_probe.json`; added Probe Datasets section.
+- `.github/workflows/evaluate.yml`: `datasets/probe/adversarial_probe.json` added to the dataset dropdown options.
+- `lab/backlog.md` Task 011: marked complete with a concise status note.
+- `lab/backlog.md` Task 017: new task added — dedicated prompt injection dataset covering trusted and untrusted source vectors and direct and indirect injection styles.
+- `CHANGELOG.md`: added entries under `[Unreleased]`.
+
+**Mini-Retro**
+1. Did the process work? Yes. The issue was a clear request to add prompt injection to the backlog. Task 011 (adversarial probe) was the prerequisite, and it was the lowest-numbered incomplete task. Both were addressed together.
+2. What slowed down or went wrong? Task 011's acceptance criteria said the probe dataset should NOT be referenced by the main evaluate workflow, but the probe dataset is most useful when it can be selected from the dropdown. The criteria referred to it not being a training workflow target, not blocking it from manual selection. Added it to the dropdown as that is the correct interpretation.
+3. What single change would prevent friction next time? Acceptance criteria that say "not referenced by X workflow" should clarify whether that means the dropdown/options list or the default execution path.
+4. Is this a pattern? No — first occurrence of this ambiguity.
