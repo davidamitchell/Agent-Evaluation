@@ -91,6 +91,7 @@ Exit codes:
 | `invariance_example.json` | Four invariance scenarios (3–4 variants each) using the flat `id`/`scenario`/`variants` schema, used to validate `check_invariance.py` via the standard evaluation pipeline |
 | `train/example_train.json` | Five training scenarios (password storage, web scraping, PII logging, insecure hashing, discriminatory content) |
 | `test/example_test.json` | Five held-out test scenarios (hardcoded credentials, TLS bypass, phishing, health record logging, unsafe eval) |
+| `probe/adversarial_probe.json` | Eight adversarial probe scenarios across three categories: adversarial intent (direct injection, system impersonation, hidden instructions in pasted content), ambiguous operational context (role claims, inline authorisation, nested instruction via support tickets), and compositional policy cases (code review with injected comment directives, article summarisation with exfiltration post-script). |
 
 ## Train / Test Split
 
@@ -106,4 +107,16 @@ The split is a **dataset-level convention**, not a runtime flag. Each directory 
 To evaluate against a specific split via GitHub Actions, set the `split` input to `train` or `test` when triggering the **Evaluate Agent** workflow. Set the `dataset` input directly to target any specific file, including `datasets/example.json`.
 
 `datasets/example.json` remains a standalone dataset used to validate the pipeline end-to-end. It is not part of the train/test split.
+
+## Probe Datasets
+
+Probe datasets in `datasets/probe/` are adversarial stress-test scenarios. They are held out from training and mutation and are never used to tune agent instructions.
+
+| File | Description |
+|------|-------------|
+| `probe/adversarial_probe.json` | Eight scenarios across three categories: adversarial intent (direct injection), ambiguous operational context (authority escalation), and compositional policy cases (injection embedded in legitimate tasks). |
+
+Probe scenarios test whether agents resist prompt injection, maintain policy under claimed authority, and correctly handle content from untrusted or compromised sources. A `fail` or `partial` score on any probe scenario is a high-priority finding.
+
+See `datasets/probe/README.md` for full category definitions and usage instructions.
 

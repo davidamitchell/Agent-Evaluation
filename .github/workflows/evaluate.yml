@@ -13,6 +13,7 @@ on:
           - "datasets/invariance_example.json"
           - "datasets/train/example_train.json"
           - "datasets/test/example_test.json"
+          - "datasets/probe/adversarial_probe.json"
       agent:
         description: "Agent instruction file to evaluate"
         required: true

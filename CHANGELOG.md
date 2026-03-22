@@ -7,9 +7,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- `BACKLOG.md` W-0014: new `ready` item for Policy-LSP conjunction judge. Extends `scripts/run_evaluation.py` with a `check_policy_violations()` function (calls `gov-lsp check` via subprocess). Pass/fail verdict becomes a conjunction: `judge_score >= 0.7 AND gov_lsp_violations == 0`. Graceful degradation when `gov-lsp` binary is absent.
+- `datasets/probe/adversarial_probe.json`: eight adversarial probe scenarios across three categories — adversarial intent (direct injection, system impersonation, hidden instructions in pasted content), ambiguous operational context (role claims, inline authorisation, support ticket injection), and compositional policy cases (code review with injected comment directives, article summarisation with exfiltration post-script). Implements Task 011.
+- `datasets/probe/README.md`: documents the probe dataset purpose, the three scenario categories, usage instructions, and what a passing score means.
+- `datasets/README.md`: Probe Datasets section documenting `datasets/probe/` and its relationship to the train/test split.
+- `evaluate.yml`: `datasets/probe/adversarial_probe.json` added to the `dataset` input options.
+- `lab/backlog.md` Task 017: new task for dedicated prompt injection testing dataset covering trusted and untrusted source vectors and direct and indirect injection styles.
 
 ### Changed
+- `lab/backlog.md` Task 011: marked complete.
 - `BACKLOG.md` W-0012: status changed from `needing_refinement` to `ready`. Added `invariant_ids` field requirement for each probe scenario (links to policy rule IDs from `davidamitchell/Policy-LSP`). Clarified that the probe dataset verifies agents fail correctly on policy violations, not just behave well when no violation is present.
 - `BACKLOG.md` W-0013: status changed from `needing_refinement` to `ready`. Added coverage check step requirement to `generate_adversarial.py`: generated scenarios must be rejected (and logged) before staging if their `invariant_ids` are already fully covered by the existing probe dataset.
 - `evaluate.yml`: `dataset` and `agent` workflow inputs changed from free-text to `type: choice` dropdowns. Options are populated from files that exist in the repository (`datasets/example.json`, `datasets/invariance_example.json`, `datasets/train/example_train.json`, `datasets/test/example_test.json` for dataset; `agents/default_agent.md`, `agents/example_agent.md` for agent). Both inputs are now `required: true`; the `||` fallback expressions in the run step have been removed.
