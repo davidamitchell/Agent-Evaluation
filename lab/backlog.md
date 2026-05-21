@@ -468,7 +468,7 @@ Agents increasingly consume content from external sources: web pages, documents,
 Investigate `stanfordnlp/dspy` to identify what this repository can learn from it and define practical, low-risk ways to apply those learnings in this evaluation system.
 
 **Background**
-DSPy is an optimization framework for language model (LM) programs. This repository is building a repeatable loop for evaluating and improving agent instructions, so DSPy patterns may be useful for mutation, scoring, and experiment design.
+DSPy is an optimization framework for language model (LM) programs ([source: stanfordnlp/dspy](https://github.com/stanfordnlp/dspy)). This repository is building a repeatable loop for evaluating and improving agent instructions, so DSPy patterns may be useful for mutation, scoring, and experiment design.
 
 **Constraints**
 - The investigation must be evidence-based (specific references to DSPy docs/repo/examples)

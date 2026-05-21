@@ -196,7 +196,7 @@ Changes:
 
 ## 2026-05-21 — Added DSPy investigation task to backlog
 
-Added a new backlog item to capture investigation of `https://github.com/stanfordnlp/dspy` focused on two explicit questions from the issue: what we can learn and how we can use it in this repository.
+Added a new backlog item to capture investigation of [stanfordnlp/dspy](https://github.com/stanfordnlp/dspy) focused on two explicit questions from the issue: what we can learn and how we can use it in this repository.
 
 Changes:
 - `lab/backlog.md`: added **Task 018 — DSPy investigation and adoption plan** with goal, constraints, deliverables, and acceptance criteria.
