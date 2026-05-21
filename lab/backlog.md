@@ -460,3 +460,34 @@ Agents increasingly consume content from external sources: web pages, documents,
 - `datasets/probe/prompt_injection.json` added as an option in `evaluate.yml`
 - `datasets/probe/README.md` documents both probe datasets and their relationship
 
+---
+
+## Task 018 — DSPy investigation and adoption plan
+
+**Goal**
+Investigate `stanfordnlp/dspy` to identify what this repository can learn from it and define practical, low-risk ways to apply those learnings in this evaluation system.
+
+**Background**
+DSPy is an optimization framework for language model (LM) programs. This repository is building a repeatable loop for evaluating and improving agent instructions, so DSPy patterns may be useful for mutation, scoring, and experiment design.
+
+**Constraints**
+- The investigation must be evidence-based (specific references to DSPy docs/repo/examples)
+- Recommendations must distinguish immediate low-effort adoption from longer-term architectural options
+- The investigation must not introduce new runtime dependencies as part of this task; this is research and planning only
+
+**Deliverables**
+- `lab/research/dspy-investigation.md` documenting:
+  - what DSPy does and the core concepts relevant to this repository
+  - what we can learn from DSPy for prompt/instruction optimization and evaluation reliability
+  - concrete options for how to use DSPy patterns in this repository, with trade-offs
+- `lab/backlog.md` updated with any follow-up implementation tasks discovered during the investigation
+- ADR in `lab/adr/` if the investigation proposes a costly-to-reverse architectural direction
+
+**Acceptance criteria**
+- Investigation doc clearly answers both questions:
+  - "What can we learn?"
+  - "How can we use it?"
+- Recommendations are separated into:
+  - short-term actions (can be done with current architecture)
+  - medium/long-term actions (require architectural changes)
+- At least three actionable follow-up tasks are identified (or explicitly state why none are needed)

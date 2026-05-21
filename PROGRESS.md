@@ -193,3 +193,17 @@ Changes:
 2. What slowed down or went wrong? Task 011's acceptance criteria said the probe dataset should NOT be referenced by the main evaluate workflow, but the probe dataset is most useful when it can be selected from the dropdown. The criteria referred to it not being a training workflow target, not blocking it from manual selection. Added it to the dropdown as that is the correct interpretation.
 3. What single change would prevent friction next time? Acceptance criteria that say "not referenced by X workflow" should clarify whether that means the dropdown/options list or the default execution path.
 4. Is this a pattern? No — first occurrence of this ambiguity.
+
+## 2026-05-21 — Added DSPy investigation task to backlog
+
+Added a new backlog item to capture investigation of `https://github.com/stanfordnlp/dspy` focused on two explicit questions from the issue: what we can learn and how we can use it in this repository.
+
+Changes:
+- `lab/backlog.md`: added **Task 018 — DSPy investigation and adoption plan** with goal, constraints, deliverables, and acceptance criteria.
+- `CHANGELOG.md`: recorded the new backlog task under `[Unreleased]`.
+
+**Mini-Retro**
+1. Did the process work? Yes — this was a focused backlog update with a clear issue scope.
+2. What slowed down or went wrong? Nothing significant; only minor effort to align task wording with existing backlog structure.
+3. What single change would prevent friction next time? Keep issue descriptions in "Goal/Deliverables" shape to map directly into backlog entries.
+4. Is this a pattern? No.
