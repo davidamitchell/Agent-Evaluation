@@ -7,6 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `lab/backlog.md` Task 018: new task to investigate `stanfordnlp/dspy`, capture what can be learned, and define actionable adoption paths for this repository.
 - `datasets/probe/adversarial_probe.json`: eight adversarial probe scenarios across three categories — adversarial intent (direct injection, system impersonation, hidden instructions in pasted content), ambiguous operational context (role claims, inline authorisation, support ticket injection), and compositional policy cases (code review with injected comment directives, article summarisation with exfiltration post-script). Implements Task 011.
 - `datasets/probe/README.md`: documents the probe dataset purpose, the three scenario categories, usage instructions, and what a passing score means.
 - `datasets/README.md`: Probe Datasets section documenting `datasets/probe/` and its relationship to the train/test split.
